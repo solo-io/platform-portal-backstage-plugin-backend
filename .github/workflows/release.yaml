@@ -1,0 +1,67 @@
+name: Release Workflow
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  branchAndPublishToNpm:
+    runs-on: ubuntu-20.04
+
+    env:
+      NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      GIT_USER_NAME: soloio-bot
+      GIT_USER_EMAIL: soloio-bot@github.com
+      GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.20.0'
+
+      - name: install yarn
+        run: |
+          chmod +x ./ci/scripts/install-yarn.sh
+          ./ci/scripts/install-yarn.sh
+
+      - name: Setup Git
+        run: |
+          git config user.name $GIT_USER_NAME
+          git config user.email $GIT_USER_EMAIL
+          git config --global url."https://${GH_TOKEN}@github.com/solo-io/".insteadOf "https://github.com/solo-io/"
+
+      - name: Create release branch
+        run: |
+          RELEASE_BRANCH=$(echo $RELEASE_TAG | sed 's|\.[0-9]*$|\.x|g')
+          git checkout -b $RELEASE_BRANCH || true
+          git push origin $RELEASE_BRANCH || true
+
+      - name: Update version in package.json
+        run: |
+          RELEASE_BRANCH=$(echo $RELEASE_TAG | sed 's|\.[0-9]*$|\.x|g')
+          RELEASE_VERSION=$(echo $RELEASE_TAG | sed 's|v||g')
+          sed -i "s|\"version\"\:[[:space:]]*\"[0-9]*\.[0-9]*\.[0-9]*\"|\"version\"\: \"$RELEASE_VERSION\"|" ./plugins/platform-portal-backstage-plugin-backend/package.json
+          sed -i "s|backend\/blob\/main\/|backend\/blob\/$RELEASE_BRANCH\/|" ./plugins/platform-portal-backstage-plugin-backend/package.json
+          git add ./plugins/platform-portal-backstage-plugin-backend/package.json || true
+          git commit -m "Update package.json version information for $RELEASE_TAG" || true
+          git push origin $RELEASE_TAG || true
+
+      - name: Install dependencies
+        run: |
+          export NODE_OPTIONS=--max-old-space-size=4096
+          yarn || true
+          yarn tsc || true
+
+      - name: Build the backend plugin
+        run: yarn --cwd ./plugins/platform-portal-backstage-plugin-backend build
+
+      - name: Authenticate and publish to NPM
+        run: |
+          npm config set //registry.npmjs.org/:_authToken $NPM_ACCESS_TOKEN
+          npm publish ./plugins/platform-portal-backstage-plugin-backend
