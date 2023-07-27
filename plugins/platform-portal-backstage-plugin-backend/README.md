@@ -39,14 +39,7 @@ export default async function createPlugin(
   const { processingEngine, router } = await builder.build();
   await processingEngine.start();
 
-  await env.scheduler.scheduleTask({
-    id: 'run_gloo_platform_portal_refresh',
-    fn: async () => {
-      await gppp.run();
-    },
-    frequency: { minutes: 10 },
-    timeout: { minutes: 5 },
-  });
+  await gppp.startScheduler(env.scheduler);
 
   //...
 }
@@ -62,4 +55,16 @@ glooPlatformPortal:
   tokenEndpoint: // Update with your token endpoint
   serviceAccountUsername: // The username of the service account that can access your APIs.
   serviceAccountPassword: // The password of the service account that can access your APIs.
+  // This is optional, defaults to 5 minutes.
+  syncFrequency:
+    hours: 0
+    minutes: 1
+    seconds: 0
+    milliseconds: 0
+  // This is optional, defaults to 30 seconds.
+  syncTimeout:
+    hours: 0
+    minutes: 0
+    seconds: 10
+    milliseconds: 0
 ```

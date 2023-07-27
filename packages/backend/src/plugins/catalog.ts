@@ -21,14 +21,7 @@ export default async function createPlugin(
   const { processingEngine, router } = await builder.build();
   await processingEngine.start();
 
-  await env.scheduler.scheduleTask({
-    id: 'run_gloo_platform_portal_refresh',
-    fn: async () => {
-      await gppp.run();
-    },
-    frequency: { minutes: 1 },
-    timeout: { seconds: 30 },
-  });
+  await gppp.startScheduler(env.scheduler);
 
   return router;
 }

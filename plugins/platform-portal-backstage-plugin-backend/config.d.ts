@@ -42,5 +42,29 @@ export interface Config {
      * @visibility backend
      */
     serviceAccountPassword: string;
+
+    /**
+     * The frequency to make the requests to sync the Gloo Platform Portal
+     * APIs with the Backstage catalog.
+     * @visibility backend
+     */
+    syncFrequency: {
+      hours: number;
+      minutes: number;
+      seconds: number;
+      milliseconds: number;
+    };
+
+    /**
+     * The timeout duration for the requests to sync the Gloo Platform Portal
+     * APIs with the Backstage catalog.
+     * @visibility backend
+     */
+    syncTimeout: {
+      hours: number;
+      minutes: number;
+      seconds: number;
+      milliseconds: number;
+    };
   };
 }

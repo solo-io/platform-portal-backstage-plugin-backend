@@ -1,6 +1,7 @@
 import { Entity, EntityMeta } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 
+import { PluginTaskScheduler } from '@backstage/backend-tasks';
 import {
   EntityProvider,
   EntityProviderConnection,
@@ -139,6 +140,48 @@ export class GlooPlatformPortalProvider implements EntityProvider {
 
   /**
    *
+   * 4. Schedule sync.
+   *
+   * This is called during setup, and passes the user config into the
+   * Backstage plugin task scheduler.
+   * */
+  async startScheduler(scheduler: PluginTaskScheduler) {
+    const frequency = this.config.getOptionalConfig(
+      'glooPlatformPortal.syncFrequency',
+    );
+    const timeout = this.config.getOptionalConfig(
+      'glooPlatformPortal.syncTimeout',
+    );
+    await scheduler.scheduleTask({
+      id: 'run_gloo_platform_portal_refresh',
+      fn: async () => {
+        await this.run();
+      },
+      frequency: !!frequency
+        ? {
+            hours: frequency.getOptionalNumber('hours'),
+            minutes: frequency.getOptionalNumber('minutes'),
+            seconds: frequency.getOptionalNumber('seconds'),
+            milliseconds: frequency.getOptionalNumber('milliseconds'),
+          }
+        : {
+            minutes: 5,
+          },
+      timeout: !!timeout
+        ? {
+            hours: timeout.getOptionalNumber('hours'),
+            minutes: timeout.getOptionalNumber('minutes'),
+            seconds: timeout.getOptionalNumber('seconds'),
+            milliseconds: timeout.getOptionalNumber('milliseconds'),
+          }
+        : {
+            seconds: 30,
+          },
+    });
+  }
+
+  /**
+   *
    * 4. Return new Backstage entities.
    *
    * Requests API information from the Gloo Platform Portal REST server,
@@ -208,7 +251,10 @@ export class GlooPlatformPortalProvider implements EntityProvider {
             apiVersion: 'backstage.io/v1alpha1',
             kind: 'API',
             metadata: {
-              tags: ['gloo-platform', 'api-version', apiVersion.apiVersion],
+              tags: [
+                'gloo-platform',
+                'api-version-' + apiVersion.apiVersion.replaceAll(' ', '_'),
+              ],
               name: apiVersion.apiId,
               title: apiVersion.apiId,
               description: apiVersion.description,
