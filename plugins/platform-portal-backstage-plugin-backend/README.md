@@ -55,13 +55,13 @@ glooPlatformPortal:
   tokenEndpoint: // Update with your token endpoint
   serviceAccountUsername: // The username of the service account that can access your APIs.
   serviceAccountPassword: // The password of the service account that can access your APIs.
-  // This is optional, defaults to 5 minutes.
+  // This is optional.
   syncFrequency:
     hours: 0
     minutes: 1
     seconds: 0
     milliseconds: 0
-  // This is optional, defaults to 30 seconds.
+  // This is optional.
   syncTimeout:
     hours: 0
     minutes: 0

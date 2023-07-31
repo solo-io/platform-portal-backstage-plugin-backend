@@ -28,9 +28,14 @@ backend:
   # This is for local development only, it is not recommended to use this in production
   # The production database configuration is stored in app-config.production.yaml
   database:
-    client: better-sqlite3
-    connection: ':memory:'
-  # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
+    # client: better-sqlite3
+    # connection: ':memory:'
+    client: pg
+    connection:
+      host: ${POSTGRES_HOST}
+      port: ${POSTGRES_PORT}
+      user: ${POSTGRES_USER}
+      password: ${POSTGRES_PASSWORD}
 
 integrations:
   github:
@@ -100,3 +105,21 @@ catalog:
     #   target: https://github.com/backstage/backstage/blob/master/packages/catalog-model/examples/acme-corp.yaml
     #   rules:
     #     - allow: [User, Group]
+
+glooPlatformPortal:
+  portalServerUrl: ${PORTAL_SERVER_URL}
+  clientId: ${CLIENT_ID}
+  clientSecret: ${CLIENT_SECRET}
+  tokenEndpoint: ${TOKEN_ENDPOINT}
+  serviceAccountUsername: ${PORTAL_SERVICE_ACCOUNT_USERNAME}
+  serviceAccountPassword: ${PORTAL_SERVICE_ACCOUNT_PASSWORD}
+  syncTimeout:
+    hours: ${PORTAL_SYNC_TIMEOUT_HOURS}
+    minutes: ${PORTAL_SYNC_TIMEOUT_MINUTES}
+    seconds: ${PORTAL_SYNC_TIMEOUT_SECONDS}
+    milliseconds: ${PORTAL_SYNC_TIMEOUT_MILLISECONDS}
+  syncFrequency:
+    hours: ${PORTAL_SYNC_FREQUENCY_HOURS}
+    minutes: ${PORTAL_SYNC_FREQUENCY_MINUTES}
+    seconds: ${PORTAL_SYNC_FREQUENCY_SECONDS}
+    milliseconds: ${PORTAL_SYNC_FREQUENCY_MILLISECONDS}

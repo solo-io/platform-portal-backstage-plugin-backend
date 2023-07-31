@@ -28,6 +28,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private logger: winston.Logger;
   private config: Config;
   private latestTokensResponse?: AccessTokensResponse;
+  private debugLogging = false;
 
   log = (s: string) => this.logger.info(`gloo-platform-portal: ${s}`);
   warn = (s: string) => this.logger.warn(`gloo-platform-portal: ${s}`);
@@ -54,7 +55,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   async startTokensRequests() {
     //
     // Make the initial request for the access_token.
-    // this.log('Making the initial access_token request.');
+    if (this.debugLogging) {
+      this.log('Making the initial access_token request.');
+    }
     const res = await doAccessTokenRequest(
       'password',
       getTokenEndpoint(this.warn, this.config),
@@ -64,7 +67,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       getServiceAccountPassword(this.warn, this.config),
     );
     this.latestTokensResponse = res;
-    // this.log('Got the initial access_token.');
+    if (this.debugLogging) {
+      this.log('Got the initial access_token. ');
+    }
     //
     // Set up a timeout to get refresh tokens this
     // updates this.latestToken on each callback.
@@ -103,7 +108,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       this.latestTokensResponse = undefined;
       return;
     }
-    // this.log('Setting a timeout to refresh the token.');
+    if (this.debugLogging) {
+      this.log('Setting a timeout to refresh the token.');
+    }
     // Set the timeout to request new tokens.
     setTimeout(
       async () => {
@@ -112,7 +119,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           return;
         }
         try {
-          // this.log('Making a refresh_token request.');
+          if (this.debugLogging) {
+            this.log('Making a refresh_token request.');
+          }
           const res = await doAccessTokenRequest(
             'refresh_token',
             getTokenEndpoint(this.warn, this.config),
@@ -123,7 +132,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
             this.latestTokensResponse.refresh_token,
           );
           this.latestTokensResponse = res;
-          // this.log('Got a new refresh_token.');
+          if (this.debugLogging) {
+            this.log('Got a new refresh_token.');
+          }
           // Recurse
           this.refreshTheToken();
         } catch (e) {
@@ -208,7 +219,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
         },
       });
       const apiProducts = (await res.json()) as APIProduct[];
-      // this.log(JSON.stringify(apiProducts));
+      if (this.debugLogging) {
+        this.log('Fetched APIs: ' + JSON.stringify(apiProducts));
+      }
       //
       // Convert the APIs to entities
       for (let i = 0; i < apiProducts.length; i++) {
@@ -274,7 +287,11 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           });
         }
       }
-      // this.log(JSON.stringify(entities));
+      if (this.debugLogging) {
+        this.log(
+          'Transformed APIs into new entities: ' + JSON.stringify(entities),
+        );
+      }
     } catch (e) {
       this.error(
         `Could not get APIs from the portal server endpoint (${apisEndpoint}). Error: ${JSON.stringify(
