@@ -50,7 +50,7 @@ jobs:
           sed -i "s|backend\/blob\/main\/|backend\/blob\/$RELEASE_BRANCH\/|" ./plugins/platform-portal-backstage-plugin-backend/package.json || true
           git add ./plugins/platform-portal-backstage-plugin-backend/package.json || true
           git commit -m "Update package.json version information for $RELEASE_TAG" || true
-          git push origin $RELEASE_TAG || true
+          git push origin $RELEASE_BRANCH || true
 
       #
       # NPM Package
