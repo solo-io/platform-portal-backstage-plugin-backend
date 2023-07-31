@@ -113,6 +113,7 @@ glooPlatformPortal:
   tokenEndpoint: ${TOKEN_ENDPOINT}
   serviceAccountUsername: ${PORTAL_SERVICE_ACCOUNT_USERNAME}
   serviceAccountPassword: ${PORTAL_SERVICE_ACCOUNT_PASSWORD}
+  debugLogging: ${PORTAL_DEBUG_LOGGING}
   syncTimeout:
     hours: ${PORTAL_SYNC_TIMEOUT_HOURS}
     minutes: ${PORTAL_SYNC_TIMEOUT_MINUTES}
