@@ -45,6 +45,10 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     this.env = env;
     this.logger = logger;
     this.config = config;
+    // Default extra debug-logging to false
+    this.debugLogging = !!config.getOptionalBoolean(
+      'glooPlatformPortal.debugLogging',
+    );
     this.log('Initializing GlooPlatformPortalProvider.');
     this.startTokensRequests();
   }

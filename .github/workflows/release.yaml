@@ -6,7 +6,7 @@ on:
       - created
 
 jobs:
-  branchAndPublishToNpm:
+  branchAndPublishToNpmAndDocker:
     runs-on: ubuntu-20.04
 
     env:

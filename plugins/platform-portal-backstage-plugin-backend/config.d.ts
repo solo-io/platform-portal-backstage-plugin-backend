@@ -1,6 +1,12 @@
 export interface Config {
   glooPlatformPortal: {
     /**
+     * Optionally enable extra debug-logging. This defaults to false.
+     * @visibility frontend
+     */
+    debugLogging: boolean;
+
+    /**
      * @visibility frontend
      */
     portalServerUrl: string;
