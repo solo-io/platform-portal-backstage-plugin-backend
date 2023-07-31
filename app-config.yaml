@@ -22,6 +22,7 @@ backend:
     script-src: ["'self'", 'blob: ', "'unsafe-eval'"]
     img-src: ["'self'", 'data:', 'https://cdn.redoc.ly/redoc/logo-mini.svg'] # Content-Security-Policy directives follow the Helmet format: https://helmetjs.github.io/#reference
     # Default Helmet Content-Security-Policy values can be removed by setting the key to false
+    upgrade-insecure-requests: false
   cors:
     origin: http://localhost:3000
     methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
