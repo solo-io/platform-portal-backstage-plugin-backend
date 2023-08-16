@@ -278,7 +278,13 @@ export class GlooPlatformPortalProvider implements EntityProvider {
             tags: [
               'gloo-platform',
               ...(!!apiVersion.apiVersion
-                ? ['api-version-' + apiVersion.apiVersion.replaceAll(' ', '_')]
+                ? [
+                    'api-version-' +
+                      apiVersion.apiVersion
+                        .replaceAll(' ', '_')
+                        .replaceAll('.', '_')
+                        .replaceAll(',', '_'),
+                  ]
                 : []),
             ],
             name: apiVersion.apiId,
