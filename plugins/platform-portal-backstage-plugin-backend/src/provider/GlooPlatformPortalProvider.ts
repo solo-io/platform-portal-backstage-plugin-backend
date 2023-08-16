@@ -281,9 +281,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
                 ? [
                     'api-version-' +
                       apiVersion.apiVersion
-                        .replaceAll(' ', '_')
-                        .replaceAll('.', '_')
-                        .replaceAll(',', '_'),
+                        .replaceAll(' ', '-')
+                        .replaceAll('.', '-')
+                        .replaceAll(',', '-'),
                   ]
                 : []),
             ],
