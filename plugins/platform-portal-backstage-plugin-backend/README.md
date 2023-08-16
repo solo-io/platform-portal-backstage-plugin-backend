@@ -17,10 +17,11 @@ This plugin will create the following Backstage catalog entities and relate them
 yarn add --cwd ./packages/backend @solo.io/platform-portal-backstage-plugin-backend
 ```
 
-2. Update your backend plugin in `packages/backend/src/plugins/catalog.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#installing-the-provider):
+2. Update your backend plugin in `packages/backend/src/plugins/catalog.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#installing-the-provider). Make sure to add the code above and below the `await processingEngine.start();` lines:
 
 ```ts
 // ...
+// -> Import the plugin.
 import { GlooPlatformPortalProvider } from '@solo.io/platform-portal-backstage-plugin-backend';
 // ...
 export default async function createPlugin(
@@ -29,16 +30,20 @@ export default async function createPlugin(
 ): Promise<Router> {
   // ...
 
+  // -> Instantiate the plugin provider.
   const gppp = new GlooPlatformPortalProvider(
     'production',
     env.logger,
     env.config,
   );
+  // -> Add the plugin provider to the catalog builder.
   builder.addEntityProvider(gppp);
 
+  // (These lines will be there, added by Backstage)
   const { processingEngine, router } = await builder.build();
   await processingEngine.start();
 
+  // -> Start the scheduled update interval after the processing engine starts.
   await gppp.startScheduler(env.scheduler);
 
   //...
