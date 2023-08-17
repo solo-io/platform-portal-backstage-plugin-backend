@@ -40,6 +40,8 @@ export type API = {
   termsOfService: string;
   title: string;
   usagePlans: string[];
+  openapiSpec?: APISchema;
+  openapiSpecFetchErr?: string;
 };
 
 // This api type may be returned in the next portal rest server version.
@@ -56,6 +58,8 @@ export type APIProduct = {
     termsOfService: string;
     title: string;
     usagePlans: string[];
+    openapiSpec?: APISchema;
+    openapiSpecFetchErr?: string;
   }[];
 };
 

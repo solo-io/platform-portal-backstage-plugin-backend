@@ -216,8 +216,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     //
     // Make API request
     try {
-      // TODO: Update this request once the server can optionally include the schema string in the response.
-      const res = await fetch(apisEndpoint, {
+      const res = await fetch(apisEndpoint + '?includeSchema=true', {
         headers: {
           Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
         },
@@ -236,6 +235,13 @@ export class GlooPlatformPortalProvider implements EntityProvider {
         processedAPIs = apiProducts.reduce((accum, curProd) => {
           accum.push(
             ...curProd.apiVersions.reduce((accumVer, api) => {
+              if (!!api.openapiSpecFetchErr) {
+                this.warn(
+                  `Schema fetch error for ${api.apiId} : ${JSON.stringify(
+                    api.openapiSpecFetchErr,
+                  )}`,
+                );
+              }
               accumVer.push({
                 apiId: api.apiId,
                 apiProductDisplayName: curProd.apiProductDisplayName,
@@ -248,6 +254,8 @@ export class GlooPlatformPortalProvider implements EntityProvider {
                 termsOfService: api.termsOfService,
                 title: api.title,
                 usagePlans: api.usagePlans,
+                openapiSpec: api.openapiSpec,
+                openapiSpecFetchErr: api.openapiSpecFetchErr,
               });
               return accumVer;
             }, [] as API[]),
@@ -260,17 +268,22 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       // Convert the APIs to entities
       for (let i = 0; i < processedAPIs.length; i++) {
         const apiVersion = processedAPIs[i];
-        // TODO: Remove this once the schema is fetched along with the rest of the api info.
-        const schemaRes = await fetch(
-          `${apisEndpoint}/${apiVersion.apiId}/schema`,
-          {
-            headers: {
-              Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
+        let schema = apiVersion.openapiSpec;
+        if (!schema && !apiVersion.openapiSpecFetchErr) {
+          // If the schema was not attempted to be fetched with
+          // the /apis call, we individually fetch it here.
+          // This is for backwards compatibility only, for
+          // when the schema was not in the /apis response.
+          const schemaRes = await fetch(
+            `${apisEndpoint}/${apiVersion.apiId}/schema`,
+            {
+              headers: {
+                Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
+              },
             },
-          },
-        );
-        const schema = (await schemaRes.json()) as APISchema;
-        // this.log(JSON.stringify(schema));
+          );
+          schema = (await schemaRes.json()) as APISchema;
+        }
         entities.push({
           apiVersion: 'backstage.io/v1alpha1',
           kind: 'API',
@@ -300,7 +313,6 @@ export class GlooPlatformPortalProvider implements EntityProvider {
             lifecycle: 'production',
             system: bsSystemName,
             owner: `user:${bsServiceAccountName}`,
-            // definition: 'openapi: "3.0.0"',
             definition: JSON.stringify(schema),
           },
         });
