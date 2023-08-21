@@ -81,7 +81,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       return;
     }
     if (this.debugLogging) {
-      this.log('Got the initial access_token.');
+      this.log('Got the access_token.');
     }
     //
     // Parse the access_token JWT to find when it expires.
@@ -98,7 +98,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       return;
     }
     if (this.debugLogging) {
-      this.log('Setting a timeout to refresh the token.');
+      this.log('Setting a timeout to get the next access token.');
     }
     // Set the timeout to request new tokens.
     setTimeout(
