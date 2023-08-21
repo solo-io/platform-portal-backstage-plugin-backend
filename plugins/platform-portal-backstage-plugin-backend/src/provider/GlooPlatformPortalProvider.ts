@@ -13,8 +13,6 @@ import {
   getClientId,
   getClientSecret,
   getPortalServerUrl,
-  getServiceAccountPassword,
-  getServiceAccountUsername,
   getTokenEndpoint,
 } from './configHelpers';
 import { doAccessTokenRequest, parseJwt } from './utility';
@@ -47,7 +45,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     this.config = config;
     // Default extra debug-logging to false
     this.debugLogging = !!config.getOptionalBoolean(
-      'glooPlatformPortal.debugLogging',
+      'glooPlatformPortal.backend.debugLogging',
     );
     this.log('Initializing GlooPlatformPortalProvider.');
     this.startTokensRequests();
@@ -62,41 +60,28 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     if (this.debugLogging) {
       this.log('Making the initial access_token request.');
     }
+    if (!this.config) {
+      this.error(
+        'Backstage config object not found when doing access token request.',
+      );
+      return;
+    }
     const res = await doAccessTokenRequest(
-      'password',
-      getTokenEndpoint(this.warn, this.config),
-      getClientId(this.warn, this.config),
-      getClientSecret(this.warn, this.config),
-      getServiceAccountUsername(this.warn, this.config),
-      getServiceAccountPassword(this.warn, this.config),
+      'client_credentials',
+      getTokenEndpoint(this.error, this.warn, this.config),
+      getClientId(this.error, this.warn, this.config),
+      getClientSecret(this.error, this.warn, this.config),
     );
     this.latestTokensResponse = res;
-    if (this.debugLogging) {
-      this.log('Got the initial access_token. ');
-    }
-    //
-    // Set up a timeout to get refresh tokens this
-    // updates this.latestToken on each callback.
-    this.refreshTheToken();
-  }
-
-  /**
-   *
-   * 3. Get refresh_tokens.
-   *
-   * Calling this will refresh the access_token when it is expiring soon,
-   * using the refresh_token in the access tokens response.
-   * */
-  async refreshTheToken() {
-    const restartAccessTokenRequests = () => {
+    if (!this.latestTokensResponse) {
       // If there's a problem, wait to restart the access token
       // requests so as to not overload the auth server.
       this.warn('No latest access token. Re-requesting the access_token.');
-      setTimeout(this.startTokensRequests, 5000);
-    };
-    if (!this.latestTokensResponse) {
-      restartAccessTokenRequests();
+      setTimeout(this.startTokensRequests.bind(this), 5000);
       return;
+    }
+    if (this.debugLogging) {
+      this.log('Got the initial access_token.');
     }
     //
     // Parse the access_token JWT to find when it expires.
@@ -117,36 +102,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     }
     // Set the timeout to request new tokens.
     setTimeout(
-      async () => {
-        if (!this.latestTokensResponse) {
-          restartAccessTokenRequests();
-          return;
-        }
-        try {
-          if (this.debugLogging) {
-            this.log('Making a refresh_token request.');
-          }
-          const res = await doAccessTokenRequest(
-            'refresh_token',
-            getTokenEndpoint(this.warn, this.config),
-            getClientId(this.warn, this.config),
-            getClientSecret(this.warn, this.config),
-            getServiceAccountUsername(this.warn, this.config),
-            getServiceAccountPassword(this.warn, this.config),
-            this.latestTokensResponse.refresh_token,
-          );
-          this.latestTokensResponse = res;
-          if (this.debugLogging) {
-            this.log('Got a new refresh_token.');
-          }
-          // Recurse
-          this.refreshTheToken();
-        } catch (e) {
-          if (!!e && typeof e === 'string') {
-            this.warn(e);
-          }
-        }
-      },
+      this.startTokensRequests.bind(this),
       // Don't make this request more than once a second,
       // and do the refresh 5 seconds early.
       Math.max(1000, millisUntilExpires - 5000),
@@ -155,17 +111,17 @@ export class GlooPlatformPortalProvider implements EntityProvider {
 
   /**
    *
-   * 4. Schedule sync.
+   * 3. Schedule sync.
    *
    * This is called during setup, and passes the user config into the
    * Backstage plugin task scheduler.
    * */
   async startScheduler(scheduler: PluginTaskScheduler) {
     const frequency = this.config.getOptionalConfig(
-      'glooPlatformPortal.syncFrequency',
+      'glooPlatformPortal.backend.syncFrequency',
     );
     const timeout = this.config.getOptionalConfig(
-      'glooPlatformPortal.syncTimeout',
+      'glooPlatformPortal.backend.syncTimeout',
     );
     await scheduler.scheduleTask({
       id: 'run_gloo_platform_portal_refresh',
@@ -211,7 +167,11 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     const bsGroupName = 'solo-io-service-accounts';
     const bsServiceAccountName = 'gloo-platform-portal-service-account';
     const bsSystemName = 'gloo-platform-portal-apis';
-    const portalServerUrl = getPortalServerUrl(this.warn, this.config);
+    const portalServerUrl = getPortalServerUrl(
+      this.error,
+      this.warn,
+      this.config,
+    );
     const apisEndpoint = `${portalServerUrl}/apis`;
     //
     // Make API request

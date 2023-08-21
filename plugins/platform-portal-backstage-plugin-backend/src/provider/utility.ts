@@ -30,12 +30,10 @@ export function objectToUrlFormEncodedPayload(
 }
 
 export async function doAccessTokenRequest(
-  grantType: 'refresh_token' | 'password',
+  grantType: 'refresh_token' | 'client_credentials',
   tokenEndpoint: string,
   clientId: string,
   clientSecret: string,
-  username: string,
-  password: string,
   refreshToken?: string,
 ) {
   const formData = {} as Record<string, string>;
@@ -50,10 +48,6 @@ export async function doAccessTokenRequest(
       return undefined;
     }
     formData.refresh_token = refreshToken;
-  }
-  if (grantType === 'password') {
-    formData.username = username;
-    formData.password = password;
   }
   //
   // Make the request

@@ -17,7 +17,7 @@ This plugin will create the following Backstage catalog entities and relate them
 yarn add --cwd ./packages/backend @solo.io/platform-portal-backstage-plugin-backend
 ```
 
-2. Update your backend plugin in `packages/backend/src/plugins/catalog.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#installing-the-provider). Make sure to add the code above and below the `await processingEngine.start();` lines:
+2. Update your backend plugin in `packages/backend/src/plugins/catalog.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#installing-the-provider). **Make sure to add the code above and below the `await processingEngine.start();` lines**:
 
 ```ts
 // ...
@@ -54,26 +54,25 @@ export default async function createPlugin(
 
 ```yaml
 glooPlatformPortal:
-  portalServerUrl: http://localhost:31080/v1
-  clientId: // Update with your client id
-  clientSecret: // Update with your client secret
-  tokenEndpoint: // Update with your token endpoint
-  serviceAccountUsername: // The username of the service account that can access your APIs.
-  serviceAccountPassword: // The password of the service account that can access your APIs.
-  // This is optional. Defaults to false.
-  debugLogging: false
-  // This is optional.
-  syncFrequency:
-    hours: 0
-    minutes: 1
-    seconds: 0
-    milliseconds: 0
-  // This is optional.
-  syncTimeout:
-    hours: 0
-    minutes: 0
-    seconds: 10
-    milliseconds: 0
+  backend:
+    portalServerUrl: http://localhost:31080/v1
+    clientId: // Update with your client id
+    clientSecret: // Update with your client secret
+    tokenEndpoint: // Update with your token endpoint
+    // This is optional. Defaults to false.
+    debugLogging: false
+    // This is optional.
+    syncFrequency:
+      hours: 0
+      minutes: 1
+      seconds: 0
+      milliseconds: 0
+    // This is optional.
+    syncTimeout:
+      hours: 0
+      minutes: 0
+      seconds: 10
+      milliseconds: 0
 ```
 
 ## Demo Image
@@ -105,8 +104,6 @@ docker run \
 -e CLIENT_ID= # replace \
 -e CLIENT_SECRET= # replace  \
 -e TOKEN_ENDPOINT=.../realms/master/protocol/openid-connect/token # replace \
--e PORTAL_SERVICE_ACCOUNT_USERNAME= # replace \
--e PORTAL_SERVICE_ACCOUNT_PASSWORD= # replace \
 -e POSTGRES_USER=postgres \
 -e POSTGRES_PASSWORD=password \
 -e POSTGRES_HOST=host.docker.internal \
@@ -125,21 +122,20 @@ backend:
       user: ${POSTGRES_USER}
       password: ${POSTGRES_PASSWORD}
 glooPlatformPortal:
-  portalServerUrl: ${PORTAL_SERVER_URL}
-  clientId: ${CLIENT_ID}
-  clientSecret: ${CLIENT_SECRET}
-  tokenEndpoint: ${TOKEN_ENDPOINT}
-  serviceAccountUsername: ${PORTAL_SERVICE_ACCOUNT_USERNAME}
-  serviceAccountPassword: ${PORTAL_SERVICE_ACCOUNT_PASSWORD}
-  debugLogging: ${PORTAL_DEBUG_LOGGING}
-  syncTimeout:
-    hours: ${PORTAL_SYNC_TIMEOUT_HOURS}
-    minutes: ${PORTAL_SYNC_TIMEOUT_MINUTES}
-    seconds: ${PORTAL_SYNC_TIMEOUT_SECONDS}
-    milliseconds: ${PORTAL_SYNC_TIMEOUT_MILLISECONDS}
-  syncFrequency:
-    hours: ${PORTAL_SYNC_FREQUENCY_HOURS}
-    minutes: ${PORTAL_SYNC_FREQUENCY_MINUTES}
-    seconds: ${PORTAL_SYNC_FREQUENCY_SECONDS}
-    milliseconds: ${PORTAL_SYNC_FREQUENCY_MILLISECONDS}
+  backend:
+    portalServerUrl: ${PORTAL_SERVER_URL}
+    clientId: ${CLIENT_ID}
+    clientSecret: ${CLIENT_SECRET}
+    tokenEndpoint: ${TOKEN_ENDPOINT}
+    debugLogging: ${PORTAL_DEBUG_LOGGING}
+    syncTimeout:
+      hours: ${PORTAL_SYNC_TIMEOUT_HOURS}
+      minutes: ${PORTAL_SYNC_TIMEOUT_MINUTES}
+      seconds: ${PORTAL_SYNC_TIMEOUT_SECONDS}
+      milliseconds: ${PORTAL_SYNC_TIMEOUT_MILLISECONDS}
+    syncFrequency:
+      hours: ${PORTAL_SYNC_FREQUENCY_HOURS}
+      minutes: ${PORTAL_SYNC_FREQUENCY_MINUTES}
+      seconds: ${PORTAL_SYNC_FREQUENCY_SECONDS}
+      milliseconds: ${PORTAL_SYNC_FREQUENCY_MILLISECONDS}
 ```
