@@ -81,3 +81,39 @@ export async function doAccessTokenRequest(
   }
   return resJSON as AccessTokensResponse;
 }
+
+//
+// From: https://backstage.io/docs/features/software-catalog/descriptor-format
+//
+const sanitizeRegex = {
+  // Each tag must be sequences of [a-z0-9:+#] separated by -, at most 63 characters in total
+  tag: /[a-z]|[0-9]|\:|\+|\#|\-/,
+  // Strings of length at least 1, and at most 63
+  // Must consist of sequences of [a-z0-9A-Z] possibly separated by one of [-_.].
+  name: /[a-z]|[0-9]|[A-Z]|\-|\_|\./,
+  // Namespaces must be sequences of [a-zA-Z0-9], possibly separated by -, at most 63 characters in total.
+  namespace: /[a-z]|[0-9]|[A-Z]|\-/,
+};
+
+/**
+ * Sanitizes a string before adding it to a backstage entity.
+ */
+export const sanitizeStringForEntity = (
+  propertyType: keyof typeof sanitizeRegex,
+  propertyValue: string,
+) => {
+  return propertyValue
+    .split('')
+    .map(ch => (!sanitizeRegex[propertyType].test(ch) ? '-' : ch))
+    .reduce(
+      (prev, cur) =>
+        // Don't go over 63 characters.
+        prev.length >= 62
+          ? prev
+          : // Don't repeat "-"
+          prev.at(-1) === '-' && cur === '-'
+          ? prev
+          : prev + cur,
+      '',
+    );
+};

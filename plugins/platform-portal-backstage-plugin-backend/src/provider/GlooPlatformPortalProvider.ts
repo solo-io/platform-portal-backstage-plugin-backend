@@ -15,7 +15,11 @@ import {
   getPortalServerUrl,
   getTokenEndpoint,
 } from './configHelpers';
-import { doAccessTokenRequest, parseJwt } from './utility';
+import {
+  doAccessTokenRequest,
+  parseJwt,
+  sanitizeStringForEntity,
+} from './utility';
 
 /**
  * Provides API entities from the Gloo Platform Portal REST server.
@@ -253,14 +257,11 @@ export class GlooPlatformPortalProvider implements EntityProvider {
               ...(!!apiVersion.apiVersion
                 ? [
                     'api-version-' +
-                      apiVersion.apiVersion
-                        .replaceAll(' ', '-')
-                        .replaceAll('.', '-')
-                        .replaceAll(',', '-'),
+                      sanitizeStringForEntity('tag', apiVersion.apiVersion),
                   ]
                 : []),
             ],
-            name: apiVersion.apiId,
+            name: sanitizeStringForEntity('name', apiVersion.apiId),
             title: apiVersion.apiId,
             description: apiVersion.description,
             annotations: {
