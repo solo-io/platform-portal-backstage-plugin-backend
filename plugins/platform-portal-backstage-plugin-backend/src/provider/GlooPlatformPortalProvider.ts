@@ -180,11 +180,17 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     //
     // Make API request
     try {
-      const res = await fetch(apisEndpoint + '?includeSchema=true', {
+      const fullRequestURI = apisEndpoint + '?includeSchema=true';
+      const res = await fetch(fullRequestURI, {
         headers: {
           Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
         },
       });
+      if (this.debugLogging) {
+        this.log(
+          `Fetching APIs from ${fullRequestURI} with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
+        );
+      }
       let processedAPIs = (await res.json()) as API[];
       if (this.debugLogging) {
         this.log('Fetched APIs: ' + JSON.stringify(processedAPIs));
