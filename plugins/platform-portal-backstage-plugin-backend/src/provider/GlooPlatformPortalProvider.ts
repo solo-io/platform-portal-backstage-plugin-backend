@@ -191,14 +191,13 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
         },
       });
+      const resText = await res.text();
       if (this.debugLogging) {
-        this.log(
-          'Performed fetch and recieved the response: ' + (await res.text()),
-        );
+        this.log('Performed fetch and recieved the response text: ' + resText);
       }
-      let processedAPIs = (await res.json()) as API[];
+      let processedAPIs = JSON.parse(resText) as API[];
       if (this.debugLogging) {
-        this.log('Parsed APIs: ' + JSON.stringify(processedAPIs));
+        this.log('Parsed the text into JSON.');
       }
 
       //
