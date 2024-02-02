@@ -109,20 +109,19 @@ catalog:
     #     - allow: [User, Group]
 
 glooPlatformPortal:
-  portalServerUrl: ${PORTAL_SERVER_URL}
-  clientId: ${CLIENT_ID}
-  clientSecret: ${CLIENT_SECRET}
-  tokenEndpoint: ${TOKEN_ENDPOINT}
-  serviceAccountUsername: ${PORTAL_SERVICE_ACCOUNT_USERNAME}
-  serviceAccountPassword: ${PORTAL_SERVICE_ACCOUNT_PASSWORD}
-  debugLogging: ${PORTAL_DEBUG_LOGGING}
-  syncTimeout:
-    hours: ${PORTAL_SYNC_TIMEOUT_HOURS}
-    minutes: ${PORTAL_SYNC_TIMEOUT_MINUTES}
-    seconds: ${PORTAL_SYNC_TIMEOUT_SECONDS}
-    milliseconds: ${PORTAL_SYNC_TIMEOUT_MILLISECONDS}
-  syncFrequency:
-    hours: ${PORTAL_SYNC_FREQUENCY_HOURS}
-    minutes: ${PORTAL_SYNC_FREQUENCY_MINUTES}
-    seconds: ${PORTAL_SYNC_FREQUENCY_SECONDS}
-    milliseconds: ${PORTAL_SYNC_FREQUENCY_MILLISECONDS}
+  backend:
+    portalServerUrl: ${PORTAL_SERVER_URL}
+    clientId: ${CLIENT_ID}
+    clientSecret: ${CLIENT_SECRET}
+    tokenEndpoint: ${TOKEN_ENDPOINT}
+    debugLogging: ${PORTAL_DEBUG_LOGGING}
+    syncTimeout:
+      hours: ${PORTAL_SYNC_TIMEOUT_HOURS}
+      minutes: ${PORTAL_SYNC_TIMEOUT_MINUTES}
+      seconds: ${PORTAL_SYNC_TIMEOUT_SECONDS}
+      milliseconds: ${PORTAL_SYNC_TIMEOUT_MILLISECONDS}
+    syncFrequency:
+      hours: ${PORTAL_SYNC_FREQUENCY_HOURS}
+      minutes: ${PORTAL_SYNC_FREQUENCY_MINUTES}
+      seconds: ${PORTAL_SYNC_FREQUENCY_SECONDS}
+      milliseconds: ${PORTAL_SYNC_FREQUENCY_MILLISECONDS}

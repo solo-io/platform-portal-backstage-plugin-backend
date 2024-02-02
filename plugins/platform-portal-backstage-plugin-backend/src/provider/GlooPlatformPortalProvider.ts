@@ -8,16 +8,18 @@ import {
 } from '@backstage/plugin-catalog-node';
 import fetch from 'node-fetch';
 import * as winston from 'winston';
-import { APIProduct, APISchema, AccessTokensResponse } from './api-types';
+import { API, APIProduct, APISchema, AccessTokensResponse } from './api-types';
 import {
   getClientId,
   getClientSecret,
   getPortalServerUrl,
-  getServiceAccountPassword,
-  getServiceAccountUsername,
   getTokenEndpoint,
 } from './configHelpers';
-import { doAccessTokenRequest, parseJwt } from './utility';
+import {
+  doAccessTokenRequest,
+  parseJwt,
+  sanitizeStringForEntity,
+} from './utility';
 
 /**
  * Provides API entities from the Gloo Platform Portal REST server.
@@ -47,7 +49,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     this.config = config;
     // Default extra debug-logging to false
     this.debugLogging = !!config.getOptionalBoolean(
-      'glooPlatformPortal.debugLogging',
+      'glooPlatformPortal.backend.debugLogging',
     );
     this.log('Initializing GlooPlatformPortalProvider.');
     this.startTokensRequests();
@@ -62,41 +64,28 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     if (this.debugLogging) {
       this.log('Making the initial access_token request.');
     }
+    if (!this.config) {
+      this.error(
+        'Backstage config object not found when doing access token request.',
+      );
+      return;
+    }
     const res = await doAccessTokenRequest(
-      'password',
-      getTokenEndpoint(this.warn, this.config),
-      getClientId(this.warn, this.config),
-      getClientSecret(this.warn, this.config),
-      getServiceAccountUsername(this.warn, this.config),
-      getServiceAccountPassword(this.warn, this.config),
+      'client_credentials',
+      getTokenEndpoint(this.error, this.warn, this.config),
+      getClientId(this.error, this.warn, this.config),
+      getClientSecret(this.error, this.warn, this.config),
     );
     this.latestTokensResponse = res;
-    if (this.debugLogging) {
-      this.log('Got the initial access_token. ');
-    }
-    //
-    // Set up a timeout to get refresh tokens this
-    // updates this.latestToken on each callback.
-    this.refreshTheToken();
-  }
-
-  /**
-   *
-   * 3. Get refresh_tokens.
-   *
-   * Calling this will refresh the access_token when it is expiring soon,
-   * using the refresh_token in the access tokens response.
-   * */
-  async refreshTheToken() {
-    const restartAccessTokenRequests = () => {
+    if (!this.latestTokensResponse) {
       // If there's a problem, wait to restart the access token
       // requests so as to not overload the auth server.
       this.warn('No latest access token. Re-requesting the access_token.');
-      setTimeout(this.startTokensRequests, 5000);
-    };
-    if (!this.latestTokensResponse) {
-      restartAccessTokenRequests();
+      setTimeout(this.startTokensRequests.bind(this), 5000);
       return;
+    }
+    if (this.debugLogging) {
+      this.log('Got the access_token.');
     }
     //
     // Parse the access_token JWT to find when it expires.
@@ -113,40 +102,11 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       return;
     }
     if (this.debugLogging) {
-      this.log('Setting a timeout to refresh the token.');
+      this.log('Setting a timeout to get the next access token.');
     }
     // Set the timeout to request new tokens.
     setTimeout(
-      async () => {
-        if (!this.latestTokensResponse) {
-          restartAccessTokenRequests();
-          return;
-        }
-        try {
-          if (this.debugLogging) {
-            this.log('Making a refresh_token request.');
-          }
-          const res = await doAccessTokenRequest(
-            'refresh_token',
-            getTokenEndpoint(this.warn, this.config),
-            getClientId(this.warn, this.config),
-            getClientSecret(this.warn, this.config),
-            getServiceAccountUsername(this.warn, this.config),
-            getServiceAccountPassword(this.warn, this.config),
-            this.latestTokensResponse.refresh_token,
-          );
-          this.latestTokensResponse = res;
-          if (this.debugLogging) {
-            this.log('Got a new refresh_token.');
-          }
-          // Recurse
-          this.refreshTheToken();
-        } catch (e) {
-          if (!!e && typeof e === 'string') {
-            this.warn(e);
-          }
-        }
-      },
+      this.startTokensRequests.bind(this),
       // Don't make this request more than once a second,
       // and do the refresh 5 seconds early.
       Math.max(1000, millisUntilExpires - 5000),
@@ -155,17 +115,17 @@ export class GlooPlatformPortalProvider implements EntityProvider {
 
   /**
    *
-   * 4. Schedule sync.
+   * 3. Schedule sync.
    *
    * This is called during setup, and passes the user config into the
    * Backstage plugin task scheduler.
    * */
   async startScheduler(scheduler: PluginTaskScheduler) {
     const frequency = this.config.getOptionalConfig(
-      'glooPlatformPortal.syncFrequency',
+      'glooPlatformPortal.backend.syncFrequency',
     );
     const timeout = this.config.getOptionalConfig(
-      'glooPlatformPortal.syncTimeout',
+      'glooPlatformPortal.backend.syncTimeout',
     );
     await scheduler.scheduleTask({
       id: 'run_gloo_platform_portal_refresh',
@@ -211,49 +171,83 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     const bsGroupName = 'solo-io-service-accounts';
     const bsServiceAccountName = 'gloo-platform-portal-service-account';
     const bsSystemName = 'gloo-platform-portal-apis';
-    const portalServerUrl = getPortalServerUrl(this.warn, this.config);
+    const portalServerUrl = getPortalServerUrl(
+      this.error,
+      this.warn,
+      this.config,
+    );
     const apisEndpoint = `${portalServerUrl}/apis`;
     //
     // Make API request
     try {
-      // TODO: Update this request once the server can optionally include the schema string in the response.
-      const res = await fetch(apisEndpoint, {
+      const fullRequestURI = apisEndpoint + '?includeSchema=true';
+      if (this.debugLogging) {
+        this.log(
+          `Fetching APIs from ${fullRequestURI} with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
+        );
+      }
+      const res = await fetch(fullRequestURI, {
         headers: {
           Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
         },
       });
-      const apiProducts = (await res.json()) as APIProduct[];
+      const resText = await res.text();
       if (this.debugLogging) {
-        this.log('Fetched APIs: ' + JSON.stringify(apiProducts));
+        this.log('Performed fetch and recieved the response text: ' + resText);
       }
+      let processedAPIs = JSON.parse(resText) as API[];
+      if (this.debugLogging) {
+        this.log('Parsed the text into JSON.');
+      }
+
+      //
+      // The server returns the APIs grouped by APIProduct,
+      // so we can convert it back to a list here.
+      //
+      if (!!processedAPIs?.length && 'apiVersions' in processedAPIs[0]) {
+        const apiProducts = processedAPIs as unknown as APIProduct[];
+        processedAPIs = apiProducts.reduce((accum, curProd) => {
+          accum.push(
+            ...curProd.apiVersions.reduce((accumVer, api) => {
+              if (!!api.openapiSpecFetchErr) {
+                this.warn(
+                  `Schema fetch error for ${api.apiId} : ${JSON.stringify(
+                    api.openapiSpecFetchErr,
+                  )}`,
+                );
+              }
+              accumVer.push({
+                apiId: api.apiId,
+                apiProductDisplayName: curProd.apiProductDisplayName,
+                apiProductId: curProd.apiProductId,
+                apiVersion: api.apiVersion,
+                contact: api.contact,
+                customMetadata: api.customMetadata,
+                description: api.description,
+                license: api.license,
+                termsOfService: api.termsOfService,
+                title: api.title,
+                usagePlans: api.usagePlans,
+                openapiSpec: api.openapiSpec,
+                openapiSpecFetchErr: api.openapiSpecFetchErr,
+              });
+              return accumVer;
+            }, [] as API[]),
+          );
+          return accum;
+        }, [] as API[]);
+      }
+
       //
       // Convert the APIs to entities
-      for (let i = 0; i < apiProducts.length; i++) {
-        const apiProduct = apiProducts[i];
-        // entities.push({
-        //   apiVersion: 'backstage.io/v1alpha1',
-        //   kind: 'Component',
-        //   metadata: {
-        //     tags: ['gloo-platform', 'api-product'],
-        //     name: apiProduct.apiProductId,
-        //     title: apiProduct.apiProductDisplayName,
-        //     description: 'This is a Gloo Platform Portal ApiProduct.',
-        //     annotations: {
-        //       'backstage.io/managed-by-location': 'url:' + apisEndpoint,
-        //       'backstage.io/managed-by-origin-location': 'url:' + apisEndpoint,
-        //     },
-        //   } as EntityMeta,
-        //   spec: {
-        //     type: 'service',
-        //     lifecycle: 'production',
-        //     owner: 'user:' + bsServiceAccountName,
-        //     providesApis: apiProduct.apiVersions.map(api => api.apiId),
-        //     system: bsSystemName,
-        //   },
-        // });
-        for (let j = 0; j < apiProduct.apiVersions.length; j++) {
-          const apiVersion = apiProduct.apiVersions[j];
-          // TODO: Remove this once the schema is fetched along with the rest of the api info.
+      for (let i = 0; i < processedAPIs.length; i++) {
+        const apiVersion = processedAPIs[i];
+        let schema = apiVersion.openapiSpec;
+        if (!schema && !apiVersion.openapiSpecFetchErr) {
+          // If the schema was not attempted to be fetched with
+          // the /apis call, we individually fetch it here.
+          // This is for backwards compatibility only, for
+          // when the schema was not in the /apis response.
           const schemaRes = await fetch(
             `${apisEndpoint}/${apiVersion.apiId}/schema`,
             {
@@ -262,34 +256,37 @@ export class GlooPlatformPortalProvider implements EntityProvider {
               },
             },
           );
-          const schema = (await schemaRes.json()) as APISchema;
-          // this.log(JSON.stringify(schema));
-          entities.push({
-            apiVersion: 'backstage.io/v1alpha1',
-            kind: 'API',
-            metadata: {
-              tags: [
-                'gloo-platform',
-                'api-version-' + apiVersion.apiVersion.replaceAll(' ', '_'),
-              ],
-              name: apiVersion.apiId,
-              title: apiVersion.apiId,
-              description: apiVersion.description,
-              annotations: {
-                'backstage.io/managed-by-location': `url:${apisEndpoint}`,
-                'backstage.io/managed-by-origin-location': `url:${apisEndpoint}`,
-              },
-            } as EntityMeta,
-            spec: {
-              type: 'openapi',
-              lifecycle: 'production',
-              system: bsSystemName,
-              owner: `user:${bsServiceAccountName}`,
-              // definition: 'openapi: "3.0.0"',
-              definition: JSON.stringify(schema),
-            },
-          });
+          schema = (await schemaRes.json()) as APISchema;
         }
+        entities.push({
+          apiVersion: 'backstage.io/v1alpha1',
+          kind: 'API',
+          metadata: {
+            tags: [
+              'gloo-platform',
+              ...(!!apiVersion.apiVersion
+                ? [
+                    'api-version-' +
+                      sanitizeStringForEntity('tag', apiVersion.apiVersion),
+                  ]
+                : []),
+            ],
+            name: sanitizeStringForEntity('name', apiVersion.apiId),
+            title: apiVersion.apiId,
+            description: apiVersion.description,
+            annotations: {
+              'backstage.io/managed-by-location': `url:${apisEndpoint}`,
+              'backstage.io/managed-by-origin-location': `url:${apisEndpoint}`,
+            },
+          } as EntityMeta,
+          spec: {
+            type: 'openapi',
+            lifecycle: 'production',
+            system: bsSystemName,
+            owner: `user:${bsServiceAccountName}`,
+            definition: JSON.stringify(schema),
+          },
+        });
       }
       if (this.debugLogging) {
         this.log(
@@ -298,7 +295,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       }
     } catch (e) {
       this.error(
-        `Could not get APIs from the portal server endpoint (${apisEndpoint}). Error: ${JSON.stringify(
+        `Could not get APIs from the portal server endpoint or their schemas or transform them into entities (${apisEndpoint}). Error: ${JSON.stringify(
           e,
         )}`,
       );
