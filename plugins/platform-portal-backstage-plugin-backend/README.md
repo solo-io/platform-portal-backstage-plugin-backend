@@ -80,13 +80,13 @@ glooPlatformPortal:
     tokenEndpoint: // Update with your token endpoint
     // This is optional. Defaults to false.
     debugLogging: false
-    // This is optional.
+    // Setting at least one of these fields is required.
     syncFrequency:
       hours: 0
       minutes: 1
       seconds: 0
       milliseconds: 0
-    // This is optional.
+    // Setting at least one of these fields is required.
     syncTimeout:
       hours: 0
       minutes: 0
@@ -126,6 +126,9 @@ docker run \
 -e PORTAL_SERVER_URL=http://host.docker.internal:31080/v1  # replace \
 -e CLIENT_ID= # replace \
 -e CLIENT_SECRET= # replace  \
+-e PORTAL_DEBUG_LOGGING=true \
+-e PORTAL_SYNC_TIMEOUT_SECONDS=10 \
+-e PORTAL_SYNC_FREQUENCY_MINUTES=1 \
 -e TOKEN_ENDPOINT=.../realms/master/protocol/openid-connect/token # replace \
 -e POSTGRES_USER=postgres \
 -e POSTGRES_PASSWORD=password \
