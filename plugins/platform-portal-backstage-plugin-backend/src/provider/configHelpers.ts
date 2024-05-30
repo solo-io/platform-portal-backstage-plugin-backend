@@ -2,7 +2,11 @@ import { Config } from '@backstage/config';
 
 type logFn = (s: string) => any;
 
-export const getPortalServerUrl = (logErr: logFn, _: logFn, config: Config) => {
+export const getPortalServerUrl = (
+  logErr: logFn,
+  _: logFn,
+  config: Config | undefined,
+) => {
   if (!config) {
     logErr('No backstage config found when getting portal server url.');
     return '';
