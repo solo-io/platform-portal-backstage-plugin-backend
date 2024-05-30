@@ -13,41 +13,60 @@ This plugin will create the following Backstage catalog entities and relate them
 
 1. Install the plugin to your backstage instance:
 
+> &#x26a0;&#xfe0f; Projects that use an older version of Backstage (prior to `v1.27.0`) should use [@solo.io/platform-portal-backstage-plugin-backend@0.0.25](https://www.npmjs.com/package/@solo.io/platform-portal-backstage-plugin-backend/v/0.0.25).
+
 ```shell
 yarn add --cwd ./packages/backend @solo.io/platform-portal-backstage-plugin-backend
 ```
 
-2. Update your backend plugin in `packages/backend/src/plugins/catalog.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#installing-the-provider). **Make sure to add the code above and below the `await processingEngine.start();` lines**:
+2. Update your backend plugin in `packages/backend/src/index.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#new-backend-system). The lines to create the backend variable and start the backend should already exist, and are included here as a frame of reference.
 
 ```ts
 // ...
-// -> Import the plugin.
+// -> 1. Add the imports in.
+import {
+  coreServices,
+  createBackendModule,
+} from '@backstage/backend-plugin-api';
+import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
 import { GlooPlatformPortalProvider } from '@solo.io/platform-portal-backstage-plugin-backend';
+
+// -> 2. Create the provider for our plugin.
+export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
+  pluginId: 'catalog',
+  moduleId: 'gloo-platform-portal-backend-provider',
+  register(env) {
+    env.registerInit({
+      deps: {
+        catalog: catalogProcessingExtensionPoint,
+        logger: coreServices.logger,
+        config: coreServices.rootConfig,
+        scheduler: coreServices.scheduler,
+      },
+      async init({ catalog, logger, config, scheduler }) {
+        catalog.addEntityProvider(
+          new GlooPlatformPortalProvider(logger, config, scheduler),
+        );
+      },
+    });
+  },
+});
+
+// -> 3. Create the backend (this line should already exist).
+const backend = createBackend();
+
 // ...
-export default async function createPlugin(
-  env: PluginEnvironment,
-  // ...
-): Promise<Router> {
-  // ...
+// Other packages are added here.
+// ...
 
-  // -> Instantiate the plugin provider.
-  const gppp = new GlooPlatformPortalProvider(
-    'production',
-    env.logger,
-    env.config,
-  );
-  // -> Add the plugin provider to the catalog builder.
-  builder.addEntityProvider(gppp);
+// Add the @backstage/plugin-catalog-backend/alpha (this line should already exist).
+backend.add(import('@backstage/plugin-catalog-backend/alpha'));
 
-  // (These lines will be there, added by Backstage)
-  const { processingEngine, router } = await builder.build();
-  await processingEngine.start();
+// -> 4. Add our provider to the backend.
+backend.add(catalogGlooPlatformPortalBackendProvider);
 
-  // -> Start the scheduled update interval after the processing engine starts.
-  await gppp.startScheduler(env.scheduler);
-
-  //...
-}
+// -> 5. The backend is started (this line should already exist).
+backend.start();
 ```
 
 3. Update the `app-config.local` file for your backstage instance to include the following values, which should match your authorization server deployment:
@@ -75,6 +94,8 @@ glooPlatformPortal:
       milliseconds: 0
 ```
 
+> &#x26a0;&#xfe0f; For Keycloak users, make sure the OIDC type is set to "confidential" on your client's settings page. On newer Keycloak versions, this is done by checking the "Client authentication" and "Service accounts roles" checkboxes. Older Keycloak versions have an "Access Type" dropdown that should be set to "Confidential", and a "Service Accounts Enabled" toggle button that must be enabled.
+
 ## Demo Image
 
 Solo.io provides a demo Backstage image with the `@solo.io/platform-portal-backstage-plugin-backend` package installed. It contains an `app-config.yaml` file which can be configured using Docker environment variables.
@@ -96,6 +117,8 @@ docker run \
 ```
 
 Then run the Backstage example app, replacing any environment variables as-needed. This example uses gcr.io/solo-public/docs/portal-backstage-backend:latest, but you can check the GitHub release versions [here](https://github.com/solo-io/platform-portal-backstage-plugin-backend/releases). `host.docker.internal`.
+
+> &#x26a0;&#xfe0f; Projects that use an older version of Backstage (prior to `v1.27.0`) should use gcr.io/solo-public/docs/portal-backstage-backend:legacy-backstage-backend instead.
 
 ```sh
 docker run \

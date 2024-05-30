@@ -1,13 +1,11 @@
+import { LoggerService, SchedulerService } from '@backstage/backend-plugin-api';
 import { Entity, EntityMeta } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
-
-import { PluginTaskScheduler } from '@backstage/backend-tasks';
 import {
   EntityProvider,
   EntityProviderConnection,
 } from '@backstage/plugin-catalog-node';
 import fetch from 'node-fetch';
-import * as winston from 'winston';
 import { API, APIProduct, APISchema, AccessTokensResponse } from './api-types';
 import {
   getClientId,
@@ -25,17 +23,16 @@ import {
  * Provides API entities from the Gloo Platform Portal REST server.
  */
 export class GlooPlatformPortalProvider implements EntityProvider {
-  private readonly env: string;
   private connection?: EntityProviderConnection;
-  private logger: winston.Logger;
+  private logger: LoggerService;
   private config: Config;
   private latestTokensResponse?: AccessTokensResponse;
   private debugLogging = false;
 
-  log = (s: string) => this.logger.info(`gloo-platform-portal: ${s}`);
-  warn = (s: string) => this.logger.warn(`gloo-platform-portal: ${s}`);
-  error = (s: string) => this.logger.error(`gloo-platform-portal: ${s}`);
-  getProviderName = () => `gloo-platform-portal-${this.env}`;
+  log = (s: string) => this.logger?.info(`gloo-platform-portal: ${s}`);
+  warn = (s: string) => this.logger?.warn(`gloo-platform-portal: ${s}`);
+  error = (s: string) => this.logger?.error(`gloo-platform-portal: ${s}`);
+  getProviderName = () => `gloo-platform-portal-backend-provider`;
   async connect(connection: EntityProviderConnection): Promise<void> {
     this.connection = connection;
   }
@@ -43,16 +40,20 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   //
   // 1. Init class
   //
-  constructor(env: string, logger: winston.Logger, config: Config) {
-    this.env = env;
+  constructor(
+    logger: LoggerService,
+    config: Config,
+    scheduler: SchedulerService,
+  ) {
     this.logger = logger;
     this.config = config;
     // Default extra debug-logging to false
-    this.debugLogging = !!config.getOptionalBoolean(
+    this.debugLogging = !!this.config?.getOptionalBoolean(
       'glooPlatformPortal.backend.debugLogging',
     );
     this.log('Initializing GlooPlatformPortalProvider.');
-    this.startTokensRequests();
+    // Get the tokens, then schedule the task to update the catalog.
+    this.startTokensRequests().then(() => this.startScheduler(scheduler));
   }
 
   //
@@ -117,14 +118,17 @@ export class GlooPlatformPortalProvider implements EntityProvider {
    *
    * 3. Schedule sync.
    *
-   * This is called during setup, and passes the user config into the
+   * This passes the user config into the
    * Backstage plugin task scheduler.
    * */
-  async startScheduler(scheduler: PluginTaskScheduler) {
-    const frequency = this.config.getOptionalConfig(
+  async startScheduler(scheduler: SchedulerService) {
+    if (this.debugLogging) {
+      this.log('Scheduling backstage catalog sync.');
+    }
+    const frequency = this.config?.getOptionalConfig(
       'glooPlatformPortal.backend.syncFrequency',
     );
-    const timeout = this.config.getOptionalConfig(
+    const timeout = this.config?.getOptionalConfig(
       'glooPlatformPortal.backend.syncTimeout',
     );
     await scheduler.scheduleTask({
@@ -301,7 +305,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       );
     }
 
-    const locationKey = `gloo-platform-portal-provider:${this.env}`;
+    const locationKey = `gloo-platform-portal-provider`;
     await this.connection.applyMutation({
       type: 'full',
       entities: [
