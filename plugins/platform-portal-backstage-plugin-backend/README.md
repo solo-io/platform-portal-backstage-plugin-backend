@@ -116,9 +116,9 @@ docker run \
 -d postgres:bookworm &
 ```
 
-Then run the Backstage example app, replacing any environment variables as-needed. This example uses gcr.io/solo-public/docs/portal-backstage-backend:latest, but you can check the GitHub release versions [here](https://github.com/solo-io/platform-portal-backstage-plugin-backend/releases). `host.docker.internal`.
+Then run the Backstage example app, replacing any environment variables as-needed. This example uses `gcr.io/solo-public/docs/portal-backstage-backend:latest`, but you can check the GitHub release versions [here](https://github.com/solo-io/platform-portal-backstage-plugin-backend/releases).
 
-> &#x26a0;&#xfe0f; Projects that use an older version of Backstage (prior to `v1.27.0`) should use gcr.io/solo-public/docs/portal-backstage-backend:legacy-backstage-backend instead.
+> &#x26a0;&#xfe0f; For an older version of Backstage (prior to v1.27.0), you can use `gcr.io/solo-public/docs/portal-backstage-backend:legacy-backstage-backend`.
 
 ```sh
 docker run \
