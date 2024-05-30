@@ -123,7 +123,7 @@ Then run the Backstage example app, replacing any environment variables as-neede
 ```sh
 docker run \
 --name backstage \
--e PORTAL_SERVER_URL=http://localhost:31080/v1  # replace \
+-e PORTAL_SERVER_URL=http://host.docker.internal:31080/v1  # replace \
 -e CLIENT_ID= # replace \
 -e CLIENT_SECRET= # replace  \
 -e TOKEN_ENDPOINT=.../realms/master/protocol/openid-connect/token # replace \
