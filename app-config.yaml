@@ -74,6 +74,7 @@ auth:
     # See https://backstage.io/docs/auth/guest/provider
     guest:
       # This is set for demos and should be updated based on your environment.
+      # https://github.com/backstage/backstage/pull/24188
       dangerouslyAllowOutsideDevelopment: true
 
 # scaffolder:
