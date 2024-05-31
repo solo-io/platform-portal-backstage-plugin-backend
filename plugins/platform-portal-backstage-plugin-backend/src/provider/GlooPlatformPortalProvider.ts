@@ -125,37 +125,58 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     if (this.debugLogging) {
       this.log('Scheduling backstage catalog sync.');
     }
-    const frequency = this.config?.getOptionalConfig(
+    const frequencyConfig = this.config?.getOptionalConfig(
       'glooPlatformPortal.backend.syncFrequency',
     );
-    const timeout = this.config?.getOptionalConfig(
+    // Get frequency from the config.
+    const frequency = {
+      hours: frequencyConfig?.getOptionalNumber('hours') ?? 0,
+      minutes: frequencyConfig?.getOptionalNumber('minutes') ?? 0,
+      seconds: frequencyConfig?.getOptionalNumber('seconds') ?? 0,
+      milliseconds: frequencyConfig?.getOptionalNumber('milliseconds') ?? 0,
+    };
+    if (Object.values(frequency).every(v => v === 0)) {
+      // If there are no values for frequency, set a resonable default instead of 0.
+      frequency.minutes = 5;
+      if (this.debugLogging) {
+        this.log(
+          `No frequency value was set, so the default value of ${frequency.minutes} minutes will be used.`,
+        );
+      }
+    }
+    if (this.debugLogging) {
+      this.log(`Frequency set to ${JSON.stringify(frequency)}.`);
+    }
+    // Get timeout from the config.
+    const timeoutConfig = this.config?.getOptionalConfig(
       'glooPlatformPortal.backend.syncTimeout',
     );
+    const timeout = {
+      hours: timeoutConfig?.getOptionalNumber('hours') ?? 0,
+      minutes: timeoutConfig?.getOptionalNumber('minutes') ?? 0,
+      seconds: timeoutConfig?.getOptionalNumber('seconds') ?? 0,
+      milliseconds: timeoutConfig?.getOptionalNumber('milliseconds') ?? 0,
+    };
+    if (Object.values(timeout).every(v => v === 0)) {
+      // If there are no values for timeout, set a resonable default instead of 0.
+      timeout.seconds = 30;
+      if (this.debugLogging) {
+        this.log(
+          `No timeout value was set. The default value of ${timeout.seconds} seconds will be used.`,
+        );
+      }
+    }
+    if (this.debugLogging) {
+      this.log(`Timeout set to ${JSON.stringify(timeout)}.`);
+    }
+    // Start the sync task on the Backstage scheduler.
     await scheduler.scheduleTask({
       id: 'run_gloo_platform_portal_refresh',
       fn: async () => {
         await this.run();
       },
-      frequency: !!frequency
-        ? {
-            hours: frequency.getOptionalNumber('hours'),
-            minutes: frequency.getOptionalNumber('minutes'),
-            seconds: frequency.getOptionalNumber('seconds'),
-            milliseconds: frequency.getOptionalNumber('milliseconds'),
-          }
-        : {
-            minutes: 5,
-          },
-      timeout: !!timeout
-        ? {
-            hours: timeout.getOptionalNumber('hours'),
-            minutes: timeout.getOptionalNumber('minutes'),
-            seconds: timeout.getOptionalNumber('seconds'),
-            milliseconds: timeout.getOptionalNumber('milliseconds'),
-          }
-        : {
-            seconds: 30,
-          },
+      frequency,
+      timeout,
     });
   }
 
