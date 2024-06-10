@@ -391,8 +391,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           this.portalServerType = 'gloo-gateway';
         }
       } catch (e) {
-        this.log('WEIRD...');
-        // This is a guess, but if it doesn't work, change it to
+        // If this doesn't work, change it to "gloo-gateway".
         this.portalServerType = 'gloo-gateway';
       }
     }
@@ -433,11 +432,16 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       for (let i = 0; i < summaries.length; i++) {
         const apiProductSummary = summaries[i];
         const getVersionsUrl = `${this.portalServerUrl}/apis/${apiProductSummary.id}/versions`;
+        if (this.debugLogging) {
+          this.log(
+            `Fetching API versions from ${getVersionsUrl} (identified as ${this.portalServerType}).`,
+          );
+        }
         const versionsRes = await fetch(getVersionsUrl, { headers });
         const resText = await versionsRes.text();
         if (this.debugLogging) {
           this.log(
-            `Performed fetch (${getVersionsUrl}) and recieved the response text: ${resText}`,
+            `Fetched ${getVersionsUrl} (identified as ${this.portalServerType}) and recieved the response text: ${resText}`,
           );
         }
         const versions = JSON.parse(resText) as ApiVersion[];
