@@ -30,6 +30,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private debugLogging = false;
   private portalServerUrl = '';
   private apisEndpoint = '';
+  private isInitialApisRequest = true;
 
   // Helper classes
   private configUtil: ConfigUtil;
@@ -355,10 +356,16 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     };
 
     if (this.debugLogging) {
+      // We don't identify the portal server type until after the first request,
+      // so wait to show it in order to reduce any confusion.
+      const portalServerInfo = this.isInitialApisRequest
+        ? ''
+        : ` (identified as ${this.portalServerType})`;
       this.log(
-        `Fetching APIs from ${this.apisEndpoint} (${this.portalServerType}) with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
+        `Fetching APIs from ${this.apisEndpoint}${portalServerInfo} with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
       );
     }
+    this.isInitialApisRequest = false;
 
     //
     // For "gloo-mesh-gateway"
