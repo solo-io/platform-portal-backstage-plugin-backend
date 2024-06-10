@@ -18,7 +18,7 @@ export class EntityBuilder {
     (this.portalServerUrl = portalServerUrl);
 
   /**
-   * A helper function to return a the Backstage catalog version entity given the API version parameters.
+   * A helper function to return a Backstage catalog entity for an API.
    */
   buildApiVersionEntity(
     apiId: string,
@@ -57,7 +57,7 @@ export class EntityBuilder {
 
   /**
    * A helper function to return a Backstage catalog EntityProviderMutation object for the GlooPlatformPortalProvider plugin.
-   * This is where the entities that are added to the catalog are defined.
+   * The returned object includes entities that will be added to the catalog.
    */
   buildEntityProviderMutation(entities: Entity[]) {
     const locationKey = `gloo-platform-portal-provider`;
