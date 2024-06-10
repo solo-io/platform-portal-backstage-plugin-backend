@@ -1,23 +1,23 @@
 import { LoggerService, SchedulerService } from '@backstage/backend-plugin-api';
-import { Entity, EntityMeta } from '@backstage/catalog-model';
+import { Entity } from '@backstage/catalog-model';
 import { Config } from '@backstage/config';
 import {
   EntityProvider,
   EntityProviderConnection,
 } from '@backstage/plugin-catalog-node';
 import fetch from 'node-fetch';
-import { API, APIProduct, APISchema, AccessTokensResponse } from './api-types';
+import { ConfigUtil } from './ConfigUtil';
+import { EntityBuilder } from './EntityBuilder';
 import {
-  getClientId,
-  getClientSecret,
-  getPortalServerUrl,
-  getTokenEndpoint,
-} from './configHelpers';
-import {
-  doAccessTokenRequest,
-  parseJwt,
-  sanitizeStringForEntity,
-} from './utility';
+  API,
+  APIProduct,
+  APISchema,
+  AccessTokensResponse,
+  ApiProductSummary,
+  ApiVersion,
+  ApiVersionExtended,
+} from './api-types';
+import { doAccessTokenRequest, parseJwt } from './utility';
 
 /**
  * Provides API entities from the Gloo Platform Portal REST server.
@@ -28,6 +28,19 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private config: Config;
   private latestTokensResponse?: AccessTokensResponse;
   private debugLogging = false;
+  private portalServerUrl = '';
+  private apisEndpoint = '';
+
+  // Helper classes
+  private configUtil: ConfigUtil;
+  private entityBuilder: EntityBuilder;
+
+  /**
+   * Default to gloo-mesh-gateway backend.
+   * This is updated to gloo-gateway if that's what the backend response type uses.
+   */
+  private portalServerType: 'gloo-mesh-gateway' | 'gloo-gateway' =
+    'gloo-mesh-gateway';
 
   log = (s: string) => this.logger?.info(`gloo-platform-portal: ${s}`);
   warn = (s: string) => this.logger?.warn(`gloo-platform-portal: ${s}`);
@@ -47,6 +60,8 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   ) {
     this.logger = logger;
     this.config = config;
+    this.configUtil = new ConfigUtil(this.error, this.warn, this.config);
+    this.entityBuilder = new EntityBuilder();
     // Default extra debug-logging to false
     this.debugLogging = !!this.config?.getOptionalBoolean(
       'glooPlatformPortal.backend.debugLogging',
@@ -73,9 +88,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     }
     const res = await doAccessTokenRequest(
       'client_credentials',
-      getTokenEndpoint(this.error, this.warn, this.config),
-      getClientId(this.error, this.warn, this.config),
-      getClientSecret(this.error, this.warn, this.config),
+      this.configUtil.getTokenEndpoint(),
+      this.configUtil.getClientId(),
+      this.configUtil.getClientSecret(),
     );
     this.latestTokensResponse = res;
     if (!this.latestTokensResponse) {
@@ -193,43 +208,26 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     }
 
     const entities: Entity[] = [];
-    const bsGroupName = 'solo-io-service-accounts';
-    const bsServiceAccountName = 'gloo-platform-portal-service-account';
-    const bsSystemName = 'gloo-platform-portal-apis';
-    const portalServerUrl = getPortalServerUrl(
-      this.error,
-      this.warn,
-      this.config,
-    );
-    const apisEndpoint = `${portalServerUrl}/apis`;
-    //
+
+    this.portalServerUrl = this.configUtil.getPortalServerUrl();
+    this.entityBuilder.onPortalServerUrlChange(this.portalServerUrl);
+
+    this.apisEndpoint = `${this.portalServerUrl}/apis`;
+    this.entityBuilder.onApisEndpointChange(this.apisEndpoint);
+
     // Make API request
     try {
-      const fullRequestURI = apisEndpoint + '?includeSchema=true';
-      if (this.debugLogging) {
-        this.log(
-          `Fetching APIs from ${fullRequestURI} with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
-        );
-      }
-      const res = await fetch(fullRequestURI, {
-        headers: {
-          Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
-        },
-      });
-      const resText = await res.text();
-      if (this.debugLogging) {
-        this.log('Performed fetch and recieved the response text: ' + resText);
-      }
-      let processedAPIs = JSON.parse(resText) as API[];
-      if (this.debugLogging) {
-        this.log('Parsed the text into JSON.');
-      }
+      let processedAPIs = await this.fetchAPIs();
 
       //
-      // The server returns the APIs grouped by APIProduct,
+      // Some Gloo Mesh Gateway portal servers returned the APIs grouped by APIProduct,
       // so we can convert it back to a list here.
       //
-      if (!!processedAPIs?.length && 'apiVersions' in processedAPIs[0]) {
+      if (
+        this.portalServerType === 'gloo-mesh-gateway' &&
+        !!processedAPIs?.length &&
+        'apiVersions' in processedAPIs[0]
+      ) {
         const apiProducts = processedAPIs as unknown as APIProduct[];
         processedAPIs = apiProducts.reduce((accum, curProd) => {
           accum.push(
@@ -263,55 +261,22 @@ export class GlooPlatformPortalProvider implements EntityProvider {
         }, [] as API[]);
       }
 
-      //
       // Convert the APIs to entities
       for (let i = 0; i < processedAPIs.length; i++) {
-        const apiVersion = processedAPIs[i];
-        let schema = apiVersion.openapiSpec;
-        if (!schema && !apiVersion.openapiSpecFetchErr) {
-          // If the schema was not attempted to be fetched with
-          // the /apis call, we individually fetch it here.
-          // This is for backwards compatibility only, for
-          // when the schema was not in the /apis response.
-          const schemaRes = await fetch(
-            `${apisEndpoint}/${apiVersion.apiId}/schema`,
-            {
-              headers: {
-                Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
-              },
-            },
-          );
-          schema = (await schemaRes.json()) as APISchema;
+        const api = processedAPIs[i];
+        if ('id' in api) {
+          //
+          // For "gloo-gateway"
+          //
+          this.portalServerType = 'gloo-gateway';
+          entities.push(await this.getGlooGatewayApiEntity(api));
+        } else if ('apiProductId' in api) {
+          //
+          // For "gloo-mesh-gateway"
+          //
+          this.portalServerType = 'gloo-mesh-gateway';
+          entities.push(await this.getGlooMeshGatewayApiEntity(api));
         }
-        entities.push({
-          apiVersion: 'backstage.io/v1alpha1',
-          kind: 'API',
-          metadata: {
-            tags: [
-              'gloo-platform',
-              ...(!!apiVersion.apiVersion
-                ? [
-                    'api-version-' +
-                      sanitizeStringForEntity('tag', apiVersion.apiVersion),
-                  ]
-                : []),
-            ],
-            name: sanitizeStringForEntity('name', apiVersion.apiId),
-            title: apiVersion.apiId,
-            description: apiVersion.description,
-            annotations: {
-              'backstage.io/managed-by-location': `url:${apisEndpoint}`,
-              'backstage.io/managed-by-origin-location': `url:${apisEndpoint}`,
-            },
-          } as EntityMeta,
-          spec: {
-            type: 'openapi',
-            lifecycle: 'production',
-            system: bsSystemName,
-            owner: `user:${bsServiceAccountName}`,
-            definition: JSON.stringify(schema),
-          },
-        });
       }
       if (this.debugLogging) {
         this.log(
@@ -320,97 +285,170 @@ export class GlooPlatformPortalProvider implements EntityProvider {
       }
     } catch (e) {
       this.error(
-        `Could not get APIs from the portal server endpoint or their schemas or transform them into entities (${apisEndpoint}). Error: ${JSON.stringify(
-          e,
-        )}`,
+        `Could not get APIs from the portal server endpoint or their schemas or transform them into entities (${
+          this.apisEndpoint
+        }). Error: ${JSON.stringify(e)}`,
       );
     }
 
-    const locationKey = `gloo-platform-portal-provider`;
-    await this.connection.applyMutation({
-      type: 'full',
-      entities: [
+    await this.connection.applyMutation(
+      this.entityBuilder.buildEntityProviderMutation(entities),
+    );
+  }
+
+  /**
+   * Returns the Backstage catalog entity for the "gloo-gateway" Portal Server API response.
+   */
+  async getGlooGatewayApiEntity(api: ApiVersionExtended): Promise<Entity> {
+    return this.entityBuilder.buildApiVersionEntity(
+      api.id,
+      api.name,
+      api.apiProductDescription,
+      api.apiSpec,
+    );
+  }
+
+  /**
+   * Returns the Backstage catalog entity for the "gloo-mesh-gateway" Portal Server API response.
+   */
+  async getGlooMeshGatewayApiEntity(api: API): Promise<Entity> {
+    if (!this.connection || !this.latestTokensResponse || !this.apisEndpoint) {
+      throw new Error('Unable to getGlooMeshGatewayApiEntity');
+    }
+    let schema = api.openapiSpec;
+    if (!schema && !api.openapiSpecFetchErr) {
+      // If the schema was not attempted to be fetched with
+      // the /apis call, we individually fetch it here.
+      // This is for backwards compatibility only, for
+      // when the schema was not in the /apis response.
+      const schemaRes = await fetch(
+        `${this.apisEndpoint}/${api.apiId}/schema`,
         {
-          locationKey,
-          entity: {
-            apiVersion: 'backstage.io/v1alpha1',
-            kind: 'Group',
-            metadata: {
-              name: bsGroupName,
-              annotations: {
-                'backstage.io/managed-by-location': `url:${portalServerUrl}`,
-                'backstage.io/managed-by-origin-location': `url:${portalServerUrl}`,
-              },
-            },
-            spec: {
-              type: 'service-account-group',
-              children: [],
-              members: [bsServiceAccountName],
-            },
+          headers: {
+            Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
           },
         },
-        {
-          locationKey,
-          entity: {
-            apiVersion: 'backstage.io/v1alpha1',
-            kind: 'User',
-            metadata: {
-              name: bsServiceAccountName,
-              annotations: {
-                'backstage.io/managed-by-location': `url:${portalServerUrl}`,
-                'backstage.io/managed-by-origin-location': `url:${portalServerUrl}`,
-              },
-            },
-            spec: {
-              displayName: 'Solo.io Service Account',
-              email: '',
-              picture: '',
-              memberOf: [bsGroupName],
-            },
-          },
-        },
-        // {
-        //   locationKey,
-        //   entity: {
-        //     apiVersion: 'backstage.io/v1alpha1',
-        //     kind: 'Domain',
-        //     metadata: {
-        //       tags: ['gloo-platform'],
-        //       name: 'api-product',
-        //       description: 'Gloo Platform Portal ApiProduct resources.',
-        //       annotations: {
-        //         'backstage.io/managed-by-location': 'url:' + apisEndpoint,
-        //         'backstage.io/managed-by-origin-location':
-        //           'url:' + apisEndpoint,
-        //       },
-        //     } as EntityMeta,
-        //     spec: {
-        //       owner: 'user:' + bsServiceAccountName,
-        //     },
-        //   },
-        // },
-        {
-          locationKey,
-          entity: {
-            apiVersion: 'backstage.io/v1alpha1',
-            kind: 'System',
-            metadata: {
-              tags: ['gloo-platform'],
-              name: bsSystemName,
-              title: 'Gloo Platform Portal APIs',
-              annotations: {
-                'backstage.io/managed-by-location': `url:${apisEndpoint}`,
-                'backstage.io/managed-by-origin-location': `url:${apisEndpoint}`,
-              },
-            } as EntityMeta,
-            spec: {
-              owner: `user:${bsServiceAccountName}`,
-              // domain: 'api-product',
-            },
-          },
-        },
-        ...entities.map(entity => ({ locationKey, entity })),
-      ],
-    });
+      );
+      schema = (await schemaRes.json()) as APISchema;
+    }
+    return this.entityBuilder.buildApiVersionEntity(
+      api.apiId,
+      api.apiVersion,
+      api.description,
+      schema,
+    );
+  }
+
+  /**
+   * A helper function for getting the API's from the Portal Server.
+   * This abstracts away the "gloo-gateway"/"gloo-mesh-gateway" portal server details.
+   */
+  async fetchAPIs() {
+    if (!this.connection || !this.latestTokensResponse || !this.apisEndpoint) {
+      throw new Error('Unable to fetch APIs');
+    }
+    let processedAPIs: (API | ApiVersionExtended)[] = [];
+    let res: any;
+    let resText: string = '';
+    const headers: fetch.HeaderInit = {
+      Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
+    };
+
+    if (this.debugLogging) {
+      this.log(
+        `Fetching APIs from ${this.apisEndpoint} (${this.portalServerType}) with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
+      );
+    }
+
+    //
+    // For "gloo-mesh-gateway"
+    //
+    if (this.portalServerType === 'gloo-mesh-gateway') {
+      const fullRequestURI = this.apisEndpoint + '?includeSchema=true';
+      try {
+        // Make the request.
+        res = await fetch(fullRequestURI, { headers });
+        resText = await res.text();
+        if (this.debugLogging) {
+          this.log(
+            'Performed fetch and recieved the response text: ' + resText,
+          );
+        }
+        processedAPIs = JSON.parse(resText) as API[];
+        if (this.debugLogging) {
+          this.log('Parsed the text into JSON.');
+        }
+
+        // Check if this is actually "gloo-gateway".
+        if (processedAPIs.length > 0 && 'versionsCount' in processedAPIs[0]) {
+          this.portalServerType = 'gloo-gateway';
+        }
+      } catch (e) {
+        this.log('WEIRD...');
+        // This is a guess, but if it doesn't work, change it to
+        this.portalServerType = 'gloo-gateway';
+      }
+    }
+
+    //
+    // For "gloo-gateway"
+    //
+    if (this.portalServerType === 'gloo-gateway') {
+      // Make the request.
+      if (!res || !resText) {
+        res = await fetch(this.apisEndpoint, { headers });
+        resText = await res.text();
+        if (this.debugLogging) {
+          this.log(
+            'Performed fetch and recieved the response text: ' + resText,
+          );
+        }
+      }
+      const parsedResponse = JSON.parse(resText) as unknown[];
+
+      // Check if this is actually "gloo-mesh-gateway".
+      if (
+        parsedResponse.length > 0 &&
+        'apiProductDisplayName' in (parsedResponse as API[])[0]
+      ) {
+        this.portalServerType = 'gloo-gateway';
+        return parsedResponse as API[];
+      }
+
+      // Fetch the information for each version.
+      const summaries = parsedResponse as ApiProductSummary[];
+      if (this.debugLogging) {
+        this.log('Parsed the ApiProductSummary text into JSON.');
+      }
+      // Reset the processedAPIs so we can add each version to it.
+      processedAPIs = [];
+      // We have to do a separate request for each ApiProduct in order to get their versions.
+      for (let i = 0; i < summaries.length; i++) {
+        const apiProductSummary = summaries[i];
+        const getVersionsUrl = `${this.portalServerUrl}/apis/${apiProductSummary.id}/versions`;
+        const versionsRes = await fetch(getVersionsUrl, { headers });
+        const resText = await versionsRes.text();
+        if (this.debugLogging) {
+          this.log(
+            `Performed fetch (${getVersionsUrl}) and recieved the response text: ${resText}`,
+          );
+        }
+        const versions = JSON.parse(resText) as ApiVersion[];
+        if (this.debugLogging) {
+          this.log('Parsed the ApiVersion text into JSON.');
+        }
+        if (!!versions?.length) {
+          // Add each API product's version to the processedAPIs.
+          processedAPIs.push(
+            ...versions.map(v => ({
+              ...v,
+              apiProductDescription: apiProductSummary.description,
+            })),
+          );
+        }
+      }
+    }
+
+    return processedAPIs;
   }
 }
