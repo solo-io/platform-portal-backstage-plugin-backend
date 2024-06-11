@@ -1,8 +1,6 @@
-export type User = {
-  name: string;
-  email: string;
-  username: string;
-};
+//
+// Gloo Mesh Gateway Types
+//
 
 type RateLimitPolicy = {
   unit: 'UNKNOWN' | 'SECOND' | 'MINUTE' | 'HOUR' | 'DAY';
@@ -61,6 +59,56 @@ export type APIProduct = {
     openapiSpec?: APISchema;
     openapiSpecFetchErr?: string | null;
   }[];
+};
+
+//
+// Gloo Gateway Types
+//
+
+export type ApiProductSummary = {
+  createdAt: string;
+  description: string;
+  id: string;
+  name: string;
+  updatedAt: string;
+  versionsCount: number;
+};
+
+export type ApiProductDetails = {
+  autoApproval: boolean;
+  contactEmail: string;
+  createdAt: string;
+  description: string;
+  id: string;
+  metadata: Record<string, string> | null;
+  name: string;
+  updatedAt: string;
+};
+
+export type ApiVersion = {
+  apiSpec?: string | APISchema;
+  createdAt: string;
+  documentation: string;
+  id: string;
+  name: string;
+  publicVisible?: boolean;
+  status: string; // 'published',
+  title: string;
+  updatedAt: string;
+};
+
+export type ApiVersionExtended = ApiVersion & {
+  apiProductDescription: string;
+};
+
+//
+// Shared Types
+//
+
+export type User = {
+  name: string;
+  email: string;
+  username: string;
 };
 
 type SchemaPropertyType = 'string' | 'integer' | 'array' | 'object';
