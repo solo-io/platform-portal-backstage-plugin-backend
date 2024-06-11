@@ -28,8 +28,6 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private config: Config;
   private latestTokensResponse?: AccessTokensResponse;
   private debugLogging = false;
-  private portalServerUrl = '';
-  private apisEndpoint = '';
   private isInitialApisRequest = true;
 
   // Helper classes
@@ -37,11 +35,22 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private entityBuilder: EntityBuilder;
 
   /**
-   * Default to gloo-mesh-gateway backend.
+   * Defaults to gloo-mesh-gateway backend.
    * This is updated to gloo-gateway if that's what the backend response type uses.
    */
-  private portalServerType: 'gloo-mesh-gateway' | 'gloo-gateway' =
+  private _portalServerType: 'gloo-mesh-gateway' | 'gloo-gateway' =
     'gloo-mesh-gateway';
+  private get portalServerType() {
+    return this._portalServerType;
+  }
+  private _portalServerUrl = '';
+  private get portalServerUrl() {
+    return this._portalServerUrl;
+  }
+  private _apisEndpoint = '';
+  private get apisEndpoint() {
+    return this._apisEndpoint;
+  }
 
   log = (s: string) => this.logger?.info(`gloo-platform-portal: ${s}`);
   warn = (s: string) => this.logger?.warn(`gloo-platform-portal: ${s}`);
@@ -49,6 +58,24 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   getProviderName = () => `gloo-platform-portal-backend-provider`;
   async connect(connection: EntityProviderConnection): Promise<void> {
     this.connection = connection;
+  }
+
+  updatePortalServerUrl() {
+    this._portalServerUrl = this.configUtil.getPortalServerUrl();
+    this.entityBuilder.onPortalServerUrlChange(this.portalServerUrl);
+  }
+
+  updateApisEndpoint() {
+    let apisPath =
+      this.portalServerType === 'gloo-gateway' ? '/api-products' : '/apis';
+    this._apisEndpoint = `${this.portalServerUrl}${apisPath}`;
+    this.entityBuilder.onApisEndpointChange(this.apisEndpoint);
+  }
+
+  updatePortalServerType(newType: typeof this.portalServerType) {
+    this._portalServerType = newType;
+    // When the portal server type changes, the apis endpoint may be updated.
+    this.updateApisEndpoint();
   }
 
   //
@@ -207,14 +234,9 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     if (!this.connection || !this.latestTokensResponse) {
       throw new Error('Not initialized');
     }
-
     const entities: Entity[] = [];
-
-    this.portalServerUrl = this.configUtil.getPortalServerUrl();
-    this.entityBuilder.onPortalServerUrlChange(this.portalServerUrl);
-
-    this.apisEndpoint = `${this.portalServerUrl}/apis`;
-    this.entityBuilder.onApisEndpointChange(this.apisEndpoint);
+    this.updatePortalServerUrl();
+    this.updateApisEndpoint();
 
     // Make API request
     try {
@@ -269,13 +291,13 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           //
           // For "gloo-gateway"
           //
-          this.portalServerType = 'gloo-gateway';
+          this.updatePortalServerType('gloo-gateway');
           entities.push(await this.getGlooGatewayApiEntity(api));
         } else if ('apiProductId' in api) {
           //
           // For "gloo-mesh-gateway"
           //
-          this.portalServerType = 'gloo-mesh-gateway';
+          this.updatePortalServerType('gloo-mesh-gateway');
           entities.push(await this.getGlooMeshGatewayApiEntity(api));
         }
       }
@@ -388,11 +410,11 @@ export class GlooPlatformPortalProvider implements EntityProvider {
 
         // Check if this is actually "gloo-gateway".
         if (processedAPIs.length > 0 && 'versionsCount' in processedAPIs[0]) {
-          this.portalServerType = 'gloo-gateway';
+          this.updatePortalServerType('gloo-gateway');
         }
       } catch (e) {
         // If this doesn't work, change it to "gloo-gateway".
-        this.portalServerType = 'gloo-gateway';
+        this.updatePortalServerType('gloo-gateway');
       }
     }
 
@@ -401,14 +423,10 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     //
     if (this.portalServerType === 'gloo-gateway') {
       // Make the request.
-      if (!res || !resText) {
-        res = await fetch(this.apisEndpoint, { headers });
-        resText = await res.text();
-        if (this.debugLogging) {
-          this.log(
-            'Performed fetch and recieved the response text: ' + resText,
-          );
-        }
+      res = await fetch(this.apisEndpoint, { headers });
+      resText = await res.text();
+      if (this.debugLogging) {
+        this.log('Performed fetch and recieved the response text: ' + resText);
       }
       const parsedResponse = JSON.parse(resText) as unknown[];
 
@@ -417,7 +435,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
         parsedResponse.length > 0 &&
         'apiProductDisplayName' in (parsedResponse as API[])[0]
       ) {
-        this.portalServerType = 'gloo-gateway';
+        this.updatePortalServerType('gloo-mesh-gateway');
         return parsedResponse as API[];
       }
 
