@@ -19,6 +19,14 @@ import {
 } from './api-types';
 import { doAccessTokenRequest, parseJwt } from './utility';
 
+type PortalServerType = 'gloo-mesh-gateway' | 'gloo-gateway' | 'unknown';
+
+type ApisEndpointResponseType =
+  | API[]
+  | APIProduct[]
+  | ApiProductSummary[]
+  | null;
+
 /**
  * Provides API entities from the Gloo Platform Portal REST server.
  */
@@ -28,18 +36,16 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private config: Config;
   private latestTokensResponse?: AccessTokensResponse;
   private debugLogging = false;
-  private isInitialApisRequest = true;
 
   // Helper classes
   private configUtil: ConfigUtil;
   private entityBuilder: EntityBuilder;
 
   /**
-   * Defaults to gloo-mesh-gateway backend.
-   * This is updated to gloo-gateway if that's what the backend response type uses.
+   * Defaults to 'unknown'.
+   * This is updated to 'gloo-gateway' or 'gloo-mesh-gateway' depending on the api response.
    */
-  private _portalServerType: 'gloo-mesh-gateway' | 'gloo-gateway' =
-    'gloo-mesh-gateway';
+  private _portalServerType: PortalServerType = 'unknown';
   private get portalServerType() {
     return this._portalServerType;
   }
@@ -50,6 +56,12 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private _apisEndpoint = '';
   private get apisEndpoint() {
     return this._apisEndpoint;
+  }
+  private get gmg_apisEndpoint() {
+    return this.portalServerUrl + '/apis?includeSchema=true';
+  }
+  private get gg_apisEndpoint() {
+    return this.portalServerUrl + '/api-products';
   }
 
   log = (s: string) => this.logger?.info(`gloo-platform-portal: ${s}`);
@@ -66,9 +78,13 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   }
 
   updateApisEndpoint() {
-    let apisPath =
-      this.portalServerType === 'gloo-gateway' ? '/api-products' : '/apis';
-    this._apisEndpoint = `${this.portalServerUrl}${apisPath}`;
+    // For portalServerType:
+    // - "unknown, and "gloo-mesh-gateway": use GMG endpoint
+    // - "gloo-gateway": use GG endpoint
+    this._apisEndpoint =
+      this.portalServerType === 'gloo-gateway'
+        ? this.gg_apisEndpoint
+        : this.gmg_apisEndpoint;
     this.entityBuilder.onApisEndpointChange(this.apisEndpoint);
   }
 
@@ -370,110 +386,143 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     if (!this.connection || !this.latestTokensResponse || !this.apisEndpoint) {
       throw new Error('Unable to fetch APIs');
     }
-    let processedAPIs: (API | ApiVersionExtended)[] = [];
-    let res: any;
-    let resText: string = '';
-    const headers: fetch.HeaderInit = {
-      Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
+    const fetchInit: fetch.RequestInit = {
+      headers: {
+        Authorization: `Bearer ${this.latestTokensResponse.access_token}`,
+      },
     };
 
+    //
+    // Make the initial apis request.
+    //
     if (this.debugLogging) {
-      // We don't identify the portal server type until after the first request,
-      // so wait to show it in order to reduce any confusion.
-      const portalServerInfo = this.isInitialApisRequest
-        ? ''
-        : ` (identified as ${this.portalServerType})`;
       this.log(
-        `Fetching APIs from ${this.apisEndpoint}${portalServerInfo} with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
+        `Fetching APIs from ${this.apisEndpoint} (identified as ${this.portalServerType}) with header: "Authorization: Bearer ${this.latestTokensResponse.access_token}"`,
       );
     }
-    this.isInitialApisRequest = false;
-
-    //
-    // For "gloo-mesh-gateway"
-    //
-    if (this.portalServerType === 'gloo-mesh-gateway') {
-      const fullRequestURI = this.apisEndpoint + '?includeSchema=true';
-      try {
-        // Make the request.
-        res = await fetch(fullRequestURI, { headers });
-        resText = await res.text();
-        if (this.debugLogging) {
-          this.log(
-            'Performed fetch and recieved the response text: ' + resText,
-          );
-        }
-        processedAPIs = JSON.parse(resText) as API[];
-        if (this.debugLogging) {
-          this.log('Parsed the text into JSON.');
-        }
-
-        // Check if this is actually "gloo-gateway".
-        if (processedAPIs.length > 0 && 'versionsCount' in processedAPIs[0]) {
-          this.updatePortalServerType('gloo-gateway');
-        }
-      } catch (e) {
-        // If this doesn't work, change it to "gloo-gateway".
-        this.updatePortalServerType('gloo-gateway');
+    let res: ApisEndpointResponseType = null;
+    try {
+      res = await (await fetch(this.apisEndpoint, fetchInit)).json();
+    } catch {}
+    if (
+      // If we didn't just try the GG endpoint, and
+      this.apisEndpoint !== this.gg_apisEndpoint &&
+      // the GG+GMG endpoints aren't the same, and
+      this.gg_apisEndpoint !== this.gmg_apisEndpoint &&
+      // the GMG request failed, or
+      (!res ||
+        // the GMG request didn't fail, it returned data, but it's not an array, or
+        !Array.isArray(res) ||
+        // the GMG request didn't fail, it returned data, but
+        (!!res.length &&
+          // it didn't return either GG or GMG data,
+          !('id' in res[0]) &&
+          !('apiVersions' in res[0])))
+    ) {
+      // try with the GG endpoint.
+      if (this.debugLogging) {
+        this.log(`Retrying fetching APIs using ${this.gg_apisEndpoint}`);
       }
+      try {
+        res = await (await fetch(this.gg_apisEndpoint, fetchInit)).json();
+      } catch {}
+    }
+    if (this.debugLogging) {
+      this.log(
+        'Performed fetch and recieved the response: ' + JSON.stringify(res),
+      );
     }
 
-    //
-    // For "gloo-gateway"
-    //
-    if (this.portalServerType === 'gloo-gateway') {
-      // Make the request.
-      res = await fetch(this.apisEndpoint, { headers });
-      resText = await res.text();
-      if (this.debugLogging) {
-        this.log('Performed fetch and recieved the response text: ' + resText);
+    let processedAPIs: (API | ApiVersionExtended)[] = [];
+    if (!!res?.length) {
+      //
+      // Check the portal server API type
+      //
+      var identifiedPortalServerType: PortalServerType = 'unknown';
+      if ('id' in res[0]) {
+        identifiedPortalServerType = 'gloo-gateway';
+      } else {
+        identifiedPortalServerType = 'gloo-mesh-gateway';
       }
-      const parsedResponse = JSON.parse(resText) as unknown[];
-
-      // Check if this is actually "gloo-mesh-gateway".
       if (
-        parsedResponse.length > 0 &&
-        'apiProductDisplayName' in (parsedResponse as API[])[0]
+        this.debugLogging &&
+        this.portalServerType !== identifiedPortalServerType
       ) {
-        this.updatePortalServerType('gloo-mesh-gateway');
-        return parsedResponse as API[];
+        this.log(
+          'Portal server type identified as: ' + identifiedPortalServerType,
+        );
       }
+      this.updatePortalServerType(identifiedPortalServerType);
 
-      // Fetch the information for each version.
-      const summaries = parsedResponse as ApiProductSummary[];
-      if (this.debugLogging) {
-        this.log('Parsed the ApiProductSummary text into JSON.');
+      //
+      // Transform the data
+      //
+      // For "gloo-mesh-gateway"
+      if (identifiedPortalServerType === 'gloo-mesh-gateway') {
+        if ('apiVersions' in res[0]) {
+          // Some versions return the data grouped by APIProduct,
+          // so we convert it back to a list here.
+          const apiProducts = res as APIProduct[];
+          processedAPIs = apiProducts.reduce((accum, curProd) => {
+            accum.push(
+              ...curProd.apiVersions.reduce((accumVer, api) => {
+                accumVer.push({
+                  apiId: api.apiId,
+                  apiProductDisplayName: curProd.apiProductDisplayName,
+                  apiProductId: curProd.apiProductId,
+                  apiVersion: api.apiVersion,
+                  contact: api.contact,
+                  customMetadata: api.customMetadata,
+                  description: api.description,
+                  license: api.license,
+                  termsOfService: api.termsOfService,
+                  title: api.title,
+                  usagePlans: api.usagePlans,
+                });
+                return accumVer;
+              }, [] as API[]),
+            );
+            return accum;
+          }, [] as API[]);
+        } else {
+          processedAPIs = res as API[];
+        }
       }
-      // Reset the processedAPIs so we can add each version to it.
-      processedAPIs = [];
-      // We have to do a separate request for each ApiProduct in order to get their versions.
-      for (let i = 0; i < summaries.length; i++) {
-        const apiProductSummary = summaries[i];
-        const getVersionsUrl = `${this.portalServerUrl}/apis/${apiProductSummary.id}/versions`;
-        if (this.debugLogging) {
-          this.log(
-            `Fetching API versions from ${getVersionsUrl} (identified as ${this.portalServerType}).`,
-          );
-        }
-        const versionsRes = await fetch(getVersionsUrl, { headers });
-        const resText = await versionsRes.text();
-        if (this.debugLogging) {
-          this.log(
-            `Fetched ${getVersionsUrl} (identified as ${this.portalServerType}) and recieved the response text: ${resText}`,
-          );
-        }
-        const versions = JSON.parse(resText) as ApiVersion[];
-        if (this.debugLogging) {
-          this.log('Parsed the ApiVersion text into JSON.');
-        }
-        if (!!versions?.length) {
-          // Add each API product's version to the processedAPIs.
-          processedAPIs.push(
-            ...versions.map(v => ({
-              ...v,
-              apiProductDescription: apiProductSummary.description,
-            })),
-          );
+      // For "gloo-gateway"
+      else if (identifiedPortalServerType === 'gloo-gateway') {
+        // Fetch the information for each version.
+        const summaries = res as ApiProductSummary[];
+        // Reset the processedAPIs so we can add each version to it.
+        processedAPIs = [];
+        // We have to do a separate request for each ApiProduct in order to get their versions.
+        for (let i = 0; i < summaries.length; i++) {
+          const apiProductSummary = summaries[i];
+          const getVersionsUrl = `${this.apisEndpoint}/${apiProductSummary.id}/versions`;
+          if (this.debugLogging) {
+            this.log(
+              `Fetching API versions from ${getVersionsUrl} (identified as ${this.portalServerType}).`,
+            );
+          }
+          let versions: ApiVersion[] = [];
+          try {
+            versions = await (await fetch(getVersionsUrl, fetchInit)).json();
+          } catch {}
+          if (this.debugLogging) {
+            this.log(
+              `Fetched ${getVersionsUrl} (identified as ${
+                this.portalServerType
+              }) and recieved the response: ${JSON.stringify(versions)}`,
+            );
+          }
+          if (!!versions?.length) {
+            // Add each API product's version to the processedAPIs.
+            processedAPIs.push(
+              ...versions.map(v => ({
+                ...v,
+                apiProductDescription: apiProductSummary.description,
+              })),
+            );
+          }
         }
       }
     }
