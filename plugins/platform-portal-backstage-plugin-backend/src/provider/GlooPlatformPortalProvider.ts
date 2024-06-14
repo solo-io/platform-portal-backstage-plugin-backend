@@ -58,7 +58,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     return this._apisEndpoint;
   }
   private get gmg_apisEndpoint() {
-    return this.portalServerUrl + '/apis?includeSchema=true';
+    return this.portalServerUrl + '/apis';
   }
   private get gg_apisEndpoint() {
     return this.portalServerUrl + '/api-products';
