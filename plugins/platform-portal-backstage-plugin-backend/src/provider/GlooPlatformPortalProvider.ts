@@ -27,6 +27,9 @@ type ApisEndpointResponseType =
   | ApiProductSummary[]
   | null;
 
+
+type EntityTransformation = (entity: Entity, api: ApiVersionExtended | API) => Promise<Entity>
+
 /**
  * Provides API entities from the Gloo Platform Portal REST server.
  */
@@ -36,6 +39,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
   private config: Config;
   private latestTokensResponse?: AccessTokensResponse;
   private debugLogging = false;
+  private entityTransformation?: EntityTransformation;
 
   // Helper classes
   private configUtil: ConfigUtil;
@@ -94,6 +98,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     this.updateApisEndpoint();
   }
 
+
   //
   // 1. Init class
   //
@@ -101,9 +106,16 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     logger: LoggerService,
     config: Config,
     scheduler: SchedulerService,
+  );
+  constructor(
+    logger: LoggerService,
+    config: Config,
+    scheduler: SchedulerService,
+    entityTransformation?: EntityTransformation
   ) {
     this.logger = logger;
     this.config = config;
+    this.entityTransformation = entityTransformation;
     this.configUtil = new ConfigUtil(this.error, this.warn, this.config);
     this.entityBuilder = new EntityBuilder();
     // Default extra debug-logging to false
@@ -308,13 +320,15 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           // For "gloo-gateway"
           //
           this.updatePortalServerType('gloo-gateway');
-          entities.push(await this.getGlooGatewayApiEntity(api));
+          let entity = await this.getGlooGatewayApiEntity(api);
+          entities.push(await this.applyEntityMapping(entity, api));
         } else if ('apiProductId' in api) {
           //
           // For "gloo-mesh-gateway"
           //
           this.updatePortalServerType('gloo-mesh-gateway');
-          entities.push(await this.getGlooMeshGatewayApiEntity(api));
+          let entity = await this.getGlooMeshGatewayApiEntity(api);
+          entities.push(await this.applyEntityMapping(entity, api));
         }
       }
       if (this.debugLogging) {
@@ -528,5 +542,13 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     }
 
     return processedAPIs;
+  }
+
+  private async applyEntityMapping(entity: Entity, api: ApiVersionExtended | API) {
+    if (this.entityTransformation) {
+      return await this.entityTransformation(entity, api);
+    }
+
+    return entity;
   }
 }
