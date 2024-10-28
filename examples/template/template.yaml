@@ -17,12 +17,14 @@ spec:
         - name
       properties:
         name:
-          title: Name
-          type: string
-          description: Unique name of the component
-          ui:autofocus: true
-          ui:options:
-            rows: 5
+          # type: string
+          # ui:autofocus: true
+          title: This is the "property.{PropertyId}.title" value.
+          description: This is the "property.{PropertyId}.description" value.
+          ui:field: SoloDropdown
+          soloDropdownOptions:
+            - 'Some Option 1'
+            - 'Some Option 2'
     - title: Choose a location
       required:
         - repoUrl

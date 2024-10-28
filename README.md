@@ -15,4 +15,4 @@ When making a new release, use the GitHub UI, and name your release in the forma
 
 ## Updating GitHub Workflow Secrets
 
-Under "Settings" -> "Secrets and variables" -> "Actions", there is an `NPM_ACCESS_TOKEN` that needs to be updated every year (since that is the maximum an NPM access token can be valid for). This token can be generated from account settings on [NPM](https://www.npmjs.com/) for users that have access to the @solo.io NPM organization.
+Under "Settings" -> "Secrets and variables" -> "Actions", there is an `NPM_ACCESS_TOKEN`. If it needs to be updated, this token can be generated from account settings on [NPM](https://www.npmjs.com/) for users that have access to the @solo.io NPM organization.
