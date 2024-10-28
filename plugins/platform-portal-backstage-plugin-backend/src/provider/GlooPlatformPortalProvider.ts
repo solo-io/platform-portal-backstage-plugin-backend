@@ -106,11 +106,6 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     logger: LoggerService,
     config: Config,
     scheduler: SchedulerService,
-  );
-  constructor(
-    logger: LoggerService,
-    config: Config,
-    scheduler: SchedulerService,
     entityTransformation?: EntityTransformation
   ) {
     this.logger = logger;
@@ -321,14 +316,14 @@ export class GlooPlatformPortalProvider implements EntityProvider {
           //
           this.updatePortalServerType('gloo-gateway');
           let entity = await this.getGlooGatewayApiEntity(api);
-          entities.push(await this.applyEntityMapping(entity, api));
+          entities.push(await this.applyEntityTransformation(entity, api));
         } else if ('apiProductId' in api) {
           //
           // For "gloo-mesh-gateway"
           //
           this.updatePortalServerType('gloo-mesh-gateway');
           let entity = await this.getGlooMeshGatewayApiEntity(api);
-          entities.push(await this.applyEntityMapping(entity, api));
+          entities.push(await this.applyEntityTransformation(entity, api));
         }
       }
       if (this.debugLogging) {
@@ -544,8 +539,8 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     return processedAPIs;
   }
 
-  private async applyEntityMapping(entity: Entity, api: ApiVersionExtended | API) {
-    if (this.entityTransformation) {
+  private async applyEntityTransformation(entity: Entity, api: ApiVersionExtended | API) {
+    if (!!this.entityTransformation) {
       return await this.entityTransformation(entity, api);
     }
 
