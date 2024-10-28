@@ -21,6 +21,9 @@ yarn add --cwd ./packages/backend @solo.io/platform-portal-backstage-plugin-back
 
 2. Update your backend plugin in `packages/backend/src/index.ts` with the following code. The parts that you will need to update should similar to what is described in the Backstage docs [here](https://backstage.io/docs/features/software-catalog/external-integrations/#new-backend-system). The lines to create the backend variable and start the backend should already exist, and are included here as a frame of reference.
 
+> [!TIP]
+> Users can also transform the Entity that is added to the catalog by defining an `entityTransformation` function, like the one that is outlined in the commented out code below.
+
 ```ts
 // ...
 // -> 1. Add the imports in.
@@ -28,10 +31,26 @@ import {
   coreServices,
   createBackendModule,
 } from '@backstage/backend-plugin-api';
+import { Entity } from '@backstage/catalog-model';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
 import { GlooPlatformPortalProvider } from '@solo.io/platform-portal-backstage-plugin-backend';
 
-// -> 2. Create the provider for our plugin.
+// -> 2. Optionally define an `entityTransformation`.
+// Entities can be transformed using this function.
+// The entity that is returned here will be added to the catalog.
+const entityTransformation = async (entity: Entity, api: any) => {
+  // The following commented out lines would add an "example-" prefix to your Entities.
+  // entity = {
+  //   ...entity,
+  //   metadata: {
+  //     ...entity.metadata,
+  //     title: 'example-' + (entity?.metadata?.title ?? ''),
+  //   },
+  // };
+  return entity;
+};
+
+// -> 3. Create the provider for our plugin.
 export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
   pluginId: 'catalog',
   moduleId: 'gloo-platform-portal-backend-provider',
@@ -45,14 +64,19 @@ export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
       },
       async init({ catalog, logger, config, scheduler }) {
         catalog.addEntityProvider(
-          new GlooPlatformPortalProvider(logger, config, scheduler),
+          new GlooPlatformPortalProvider(
+            logger,
+            config,
+            scheduler,
+            entityTransformation,
+          ),
         );
       },
     });
   },
 });
 
-// -> 3. Create the backend (this line should already exist).
+// -> 4. Create the backend (this line should already exist).
 const backend = createBackend();
 
 // ...
@@ -62,10 +86,10 @@ const backend = createBackend();
 // Add the @backstage/plugin-catalog-backend/alpha (this line should already exist).
 backend.add(import('@backstage/plugin-catalog-backend/alpha'));
 
-// -> 4. Add our provider to the backend.
+// -> 5. Add our provider to the backend.
 backend.add(catalogGlooPlatformPortalBackendProvider);
 
-// -> 5. The backend is started (this line should already exist).
+// -> 6. The backend is started (this line should already exist).
 backend.start();
 ```
 

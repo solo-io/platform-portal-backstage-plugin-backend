@@ -12,8 +12,23 @@ import {
   coreServices,
   createBackendModule,
 } from '@backstage/backend-plugin-api';
+import { Entity } from '@backstage/catalog-model';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
 import { GlooPlatformPortalProvider } from '@solo.io/platform-portal-backstage-plugin-backend';
+
+// Entities can be transformed using this function.
+// The entity that is returned here will be added to the catalog.
+const entityTransformation = async (entity: Entity, api: any) => {
+  // The following commented out lines would add an "example-" prefix to your Entities.
+  // entity = {
+  //   ...entity,
+  //   metadata: {
+  //     ...entity.metadata,
+  //     title: 'example-' + (entity?.metadata?.title ?? ''),
+  //   },
+  // };
+  return entity;
+};
 
 export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
   pluginId: 'catalog',
@@ -28,7 +43,12 @@ export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
       },
       async init({ catalog, logger, config, scheduler }) {
         catalog.addEntityProvider(
-          new GlooPlatformPortalProvider(logger, config, scheduler),
+          new GlooPlatformPortalProvider(
+            logger,
+            config,
+            scheduler,
+            entityTransformation,
+          ),
         );
       },
     });
