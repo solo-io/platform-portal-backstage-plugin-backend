@@ -28,7 +28,6 @@ const entityTransformation = async (entity: Entity, api: ApiVersion | API) => {
   //   },
   // };
   return entity;
-  return entity;
 };
 
 export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
