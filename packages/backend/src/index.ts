@@ -27,6 +27,7 @@ const entityTransformation = async (entity: Entity, api: ApiVersion | API) => {
   //     title: 'example-' + (entity?.metadata?.title ?? ''),
   //   },
   // };
+  return entity;
 };
 
 export const catalogGlooPlatformPortalBackendProvider = createBackendModule({
