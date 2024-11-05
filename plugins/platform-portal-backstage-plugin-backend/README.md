@@ -47,6 +47,7 @@ const entityTransformation = async (entity: Entity, api: ApiVersion | API) => {
   //     title: 'example-' + (entity?.metadata?.title ?? ''),
   //   },
   // };
+  return entity;
 };
 
 // -> 3. Create the provider for our plugin.
