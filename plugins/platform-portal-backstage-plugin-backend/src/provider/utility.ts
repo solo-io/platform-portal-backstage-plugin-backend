@@ -103,6 +103,7 @@ export const sanitizeStringForEntity = (
   propertyValue: string,
 ) => {
   return propertyValue
+    .toLowerCase()
     .split('')
     .map(ch => (!sanitizeRegex[propertyType].test(ch) ? '-' : ch))
     .reduce(
