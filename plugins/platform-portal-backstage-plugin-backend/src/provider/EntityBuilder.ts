@@ -33,7 +33,7 @@ export class EntityBuilder {
         tags: [
           'gloo-platform',
           ...(!!apiVersion
-            ? ['api-version-' + sanitizeStringForEntity('tag', apiVersion)]
+            ? ['api-version:' + sanitizeStringForEntity('tag', apiVersion)]
             : []),
         ],
         name: sanitizeStringForEntity('name', apiId),

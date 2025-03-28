@@ -1,5 +1,11 @@
 # @solo.io/platform-portal-backstage-plugin-backend
 
+> [!NOTE]
+> This plugin works with the following portal server backends:
+>
+> - Gloo Gateway v1.18+
+> - Gloo Mesh Gateway v2.4.0+
+
 ## Description
 
 This plugin will create the following Backstage catalog entities and relate them to each other:
@@ -33,7 +39,11 @@ import {
 } from '@backstage/backend-plugin-api';
 import { Entity } from '@backstage/catalog-model';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
-import { API, ApiVersion, GlooPlatformPortalProvider } from '@solo.io/platform-portal-backstage-plugin-backend';
+import {
+  API,
+  ApiVersion,
+  GlooPlatformPortalProvider,
+} from '@solo.io/platform-portal-backstage-plugin-backend';
 
 // -> 2. Optionally define an `entityTransformation`.
 // Entities can be transformed using this function.
