@@ -30,6 +30,7 @@ jobs:
           chmod +x ./ci/scripts/install-yarn.sh
           ./ci/scripts/install-yarn.sh
           yarn set version 4.x
+          yarn set version stable
 
       - name: Setup Git
         run: |
