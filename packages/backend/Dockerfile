@@ -13,13 +13,13 @@ FROM node:20-bookworm-slim
 
 # Enable Corepack and activate the specified Yarn version
 RUN corepack enable && corepack prepare yarn@4.9.1 --activate
+ENV PYTHON=/usr/bin/python3
 
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
-    apt-get install -y --no-install-recommends python3 g++ build-essential && \
-    yarn config set python /usr/bin/python3
+    apt-get install -y --no-install-recommends python3 g++ build-essential
 
 # # Install sqlite3 dependencies. You can skip this if you don't use sqlite3 in the image,
 # # in which case you should also move better-sqlite3 to "devDependencies" in package.json.
@@ -36,7 +36,7 @@ USER node
 WORKDIR /app
 
 # This switches many Node.js dependencies to production mode.
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 # Copy repo skeleton first, to avoid unnecessary docker cache invalidation.
 # The skeleton contains the package.json of each package in the monorepo,
