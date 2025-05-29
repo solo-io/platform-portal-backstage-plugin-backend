@@ -11,6 +11,9 @@
 
 FROM node:20-bookworm-slim
 
+# Enable Corepack and activate the specified Yarn version
+RUN corepack enable && corepack prepare yarn@4.9.1 --activate
+
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -41,10 +44,13 @@ ENV NODE_ENV production
 COPY --chown=node:node yarn.lock package.json packages/backend/dist/skeleton.tar.gz ./
 RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 
-RUN yarn set version 4.x && yarn set version stable
+# Yarn 4 requires these files to be present
+COPY --chown=node:node .yarn .yarn
+COPY --chown=node:node .yarnrc.yml ./
+
 
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
-    yarn install --frozen-lockfile --production --network-timeout 300000
+    yarn install --immutable --production --network-timeout 300000
 
 # Then copy the rest of the backend bundle, along with any other files we might want.
 COPY --chown=node:node packages/backend/dist/bundle.tar.gz app-config*.yaml ./
