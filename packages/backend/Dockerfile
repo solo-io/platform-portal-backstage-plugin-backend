@@ -13,6 +13,7 @@ FROM node:20-bookworm-slim
 
 # Enable Corepack and activate the specified Yarn version
 RUN corepack enable && corepack prepare yarn@4.9.1 --activate
+RUN mkdir -p /home/node/.cache || true
 RUN chown -R node:node /home/node/.cache
 ENV PYTHON=/usr/bin/python3
 
@@ -31,7 +32,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # From here on we use the least-privileged `node` user to run the backend.
 USER node
 
-
 # This should create the app dir as `node`.
 # If it is instead created as `root` then the `tar` command below will fail: `can't create directory 'packages/': Permission denied`.
 # If this occurs, then ensure BuildKit is enabled (`DOCKER_BUILDKIT=1`) so the app dir is correctly created as `node`.
@@ -49,7 +49,6 @@ RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 # Yarn 4 requires these files to be present
 COPY --chown=node:node .yarn .yarn
 COPY --chown=node:node .yarnrc.yml ./
-
 
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
     yarn install --immutable --production --network-timeout 300000
