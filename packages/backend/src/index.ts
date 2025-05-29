@@ -14,11 +14,15 @@ import {
 } from '@backstage/backend-plugin-api';
 import { Entity } from '@backstage/catalog-model';
 import { catalogProcessingExtensionPoint } from '@backstage/plugin-catalog-node/alpha';
-import { API, ApiVersion, GlooPlatformPortalProvider } from '@solo.io/platform-portal-backstage-plugin-backend';
+import {
+  API,
+  ApiVersion,
+  GlooPlatformPortalProvider,
+} from '@solo.io/platform-portal-backstage-plugin-backend';
 
 // Entities can be transformed using this function.
 // The entity that is returned here will be added to the catalog.
-const entityTransformation = async (entity: Entity, api: ApiVersion | API) => {
+const entityTransformation = async (entity: Entity, _api: ApiVersion | API) => {
   // The following commented out lines would add an "example-" prefix to your Entities.
   // return {
   //   ...entity,
