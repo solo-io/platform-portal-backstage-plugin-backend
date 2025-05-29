@@ -11,6 +11,11 @@
 
 FROM node:20-bookworm-slim
 
+# Enable Corepack and activate the specified Yarn version
+RUN corepack enable && corepack prepare yarn@4.9.1 --activate
+RUN chown -R node:node /home/node/.cache
+ENV PYTHON=/usr/bin/python3
+
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
@@ -23,15 +28,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 #     --mount=type=cache,target=/var/lib/apt,sharing=locked \
 #     apt-get install -y --no-install-recommends libsqlite3-dev
 
-RUN mkdir -p /home/node/.cache/node/corepack && chown -R node:node /home/node/.cache
 # From here on we use the least-privileged `node` user to run the backend.
 USER node
 
-
-# Enable Corepack and activate the specified Yarn version
-# This needs to be done for the node user
-RUN corepack enable && corepack prepare yarn@4.9.1 --activate
-ENV PYTHON=/usr/bin/python3
 
 # This should create the app dir as `node`.
 # If it is instead created as `root` then the `tar` command below will fail: `can't create directory 'packages/': Permission denied`.
