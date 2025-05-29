@@ -23,8 +23,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 #     --mount=type=cache,target=/var/lib/apt,sharing=locked \
 #     apt-get install -y --no-install-recommends libsqlite3-dev
 
+RUN mkdir -p /home/node/.cache/node/corepack && chown -R node:node /home/node/.cache
 # From here on we use the least-privileged `node` user to run the backend.
 USER node
+
 
 # Enable Corepack and activate the specified Yarn version
 # This needs to be done for the node user
