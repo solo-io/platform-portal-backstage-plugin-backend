@@ -26,7 +26,10 @@
   ],
   "backstage": {
     "role": "backend-plugin",
-    "pluginId": "platform-portal"
+    "pluginId": "catalog",
+    "pluginPackages": [
+      "@solo.io/platform-portal-backstage-plugin-backend"
+    ]
   },
   "scripts": {
     "start": "backstage-cli package start",
