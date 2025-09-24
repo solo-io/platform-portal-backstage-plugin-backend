@@ -25,7 +25,8 @@
     "gloo-platform-portal"
   ],
   "backstage": {
-    "role": "backend-plugin"
+    "role": "backend-plugin",
+    "pluginId": "platform-portal"
   },
   "scripts": {
     "start": "backstage-cli package start",
