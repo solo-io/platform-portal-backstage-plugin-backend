@@ -42,7 +42,6 @@
     "app": "link:../app",
     "better-sqlite3": "^9.0.0",
     "dockerode": "^4.0.5",
-    "form-data": "2.5.4",
     "node-gyp": "^9.0.0",
     "pg": "^8.11.3",
     "winston": "^3.2.1"
@@ -55,7 +54,7 @@
     "@types/luxon": "^2.0.4"
   },
   "resolutions": {
-    "form-data": "2.5.4",
+    "form-data": "^2.5.5",
     "jsonpath-plus": "10.3.0"
   },
   "files": [

@@ -49,7 +49,6 @@
     "@types/node-fetch": "^2.6.13",
     "express": "^4.18.1",
     "express-promise-router": "^4.1.0",
-    "form-data": "2.5.4",
     "node-fetch": "2",
     "winston": "^3.2.1",
     "yn": "^4.0.0"
@@ -61,7 +60,7 @@
     "supertest": "^6.2.4"
   },
   "resolutions": {
-    "form-data": "2.5.4",
+    "form-data": "^2.5.5",
     "jsonpath-plus": "10.3.0"
   },
   "files": [
