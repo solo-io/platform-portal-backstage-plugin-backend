@@ -59,10 +59,6 @@
     "msw": "^0.49.0",
     "supertest": "^6.2.4"
   },
-  "resolutions": {
-    "form-data": "^2.5.5",
-    "jsonpath-plus": "10.3.0"
-  },
   "files": [
     "dist",
     "config.d.ts"
