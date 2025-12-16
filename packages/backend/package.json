@@ -16,7 +16,7 @@
     "build-image": "docker build ../.. -f Dockerfile --tag backstage"
   },
   "dependencies": {
-    "@backstage/backend-common": "^0.24.1",
+    "@backstage/backend-common": "^0.25.0",
     "@backstage/backend-defaults": "^0.5.0",
     "@backstage/backend-tasks": "^0.6.1",
     "@backstage/config": "^1.2.0",
@@ -55,10 +55,5 @@
   },
   "files": [
     "dist"
-  ],
-  "resolutions": {
-    "@backstage/plugin-auth-backend": "^0.25.0",
-    "@backstage/backend-common": "^0.24.1",
-    "@backstage/plugin-proxy-backend": "^0.5.4"
-  }
+  ]
 }

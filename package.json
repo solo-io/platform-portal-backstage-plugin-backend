@@ -53,7 +53,10 @@
     "react-dom": "^18.0.0",
     "better-sqlite3": "^8.0.0",
     "form-data@~2.3.2": "^2.5.5",
-    "jsonpath-plus": "10.3.0"
+    "jsonpath-plus": "10.3.0",
+    "@backstage/plugin-auth-backend": "^0.25.0",
+    "@backstage/backend-common": "^0.25.0",
+    "@backstage/plugin-proxy-backend": "^0.5.4"
   },
   "prettier": "@spotify/prettier-config",
   "lint-staged": {
