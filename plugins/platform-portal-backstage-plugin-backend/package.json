@@ -1,7 +1,7 @@
 {
   "name": "@solo.io/platform-portal-backstage-plugin-backend",
   "description": "A Backstage backend plugin that synchronizes Gloo Platform Portal APIs with the Backstage catalog.",
-  "version": "0.0.53",
+  "version": "0.0.5",
   "main": "src/index.ts",
   "types": "src/index.ts",
   "license": "Apache-2.0",
@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/solo-io/platform-portal-backstage-plugin-backend/issues"
   },
-  "homepage": "https://github.com/solo-io/platform-portal-backstage-plugin-backend/blob/v0.0.x/plugins/platform-portal-backstage-plugin-backend/README.md",
+  "homepage": "https://github.com/solo-io/platform-portal-backstage-plugin-backend/blob/main/plugins/platform-portal-backstage-plugin-backend/README.md",
   "keywords": [
     "backstage",
     "gloo-platform",

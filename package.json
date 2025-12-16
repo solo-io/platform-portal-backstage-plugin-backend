@@ -39,7 +39,7 @@
     "@types/react-dom": "^18",
     "concurrently": "^8.0.0",
     "lerna": "^7.3.0",
-    "node-gyp": "^9.0.0",
+    "node-gyp": "^10.0.0",
     "prettier": "^2.3.2",
     "react": "^18.0.0",
     "react-dom": "18.0.0",
