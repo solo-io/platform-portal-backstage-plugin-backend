@@ -60,7 +60,9 @@
     "@backstage/backend-defaults": "^0.8.0",
     "@backstage/plugin-auth-backend-module-github-provider": "^0.2.0",
     "@backstage/plugin-permission-backend-module-allow-all-policy": "^0.2.0",
-    "@backstage/plugin-catalog-backend-module-scaffolder-entity-model": "^0.2.0"
+    "@backstage/plugin-catalog-backend-module-scaffolder-entity-model": "^0.2.0",
+    "@octokit/request": "^8.4.1",
+    "@octokit/plugin-paginate-rest": "^11.4.1"
   },
   "prettier": "@spotify/prettier-config",
   "lint-staged": {
