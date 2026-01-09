@@ -21,9 +21,9 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v5
         with:
-          node-version: '20.19.2'
+          node-version-file: ".nvmrc"
 
       - name: install yarn
         run: |
@@ -62,9 +62,9 @@ jobs:
         run: |
           RELEASE_BRANCH=$(echo $RELEASE_TAG | sed 's|\.[0-9]*$|\.x|g')
           RELEASE_VERSION=$(echo $RELEASE_TAG | sed 's|v||g')
-          sed -i "s|\"version\"\:[[:space:]]*\"[0-9]*\.[0-9]*\.[0-9]*\"|\"version\"\: \"$RELEASE_VERSION\"|" ./plugins/platform-portal-backstage-plugin-backend/package.json
-          sed -i "s|backend\/blob\/main\/|backend\/blob\/$RELEASE_BRANCH\/|" ./plugins/platform-portal-backstage-plugin-backend/package.json || true
-          git add ./plugins/platform-portal-backstage-plugin-backend/package.json || true
+          sed -i "s|\"version\"\:[[:space:]]*\"[0-9]*\.[0-9]*\.[0-9]*\"|\"version\"\: \"$RELEASE_VERSION\"|" ./backstage/plugins/platform-portal-backstage-plugin-backend/package.json
+          sed -i "s|backend\/blob\/main\/|backend\/blob\/$RELEASE_BRANCH\/|" ./backstage/plugins/platform-portal-backstage-plugin-backend/package.json || true
+          git add ./backstage/plugins/platform-portal-backstage-plugin-backend/package.json || true
           git commit -m "Update package.json version information for $RELEASE_TAG" || true
           git push origin $RELEASE_BRANCH
 
@@ -81,7 +81,7 @@ jobs:
       - name: Authenticate and publish to NPM
         run: |
           npm config set //registry.npmjs.org/:_authToken $NPM_ACCESS_TOKEN
-          npm publish ./plugins/platform-portal-backstage-plugin-backend
+          npm publish ./backstage/plugins/platform-portal-backstage-plugin-backend
 
       #
       # GCR Image
@@ -104,6 +104,7 @@ jobs:
 
       - name: Build and push Docker image
         run: |
+          cd ./backstage
           DOCKER_BUILDKIT=1 docker build -f ./packages/backend/Dockerfile --tag gcr.io/solo-public/docs/portal-backstage-backend:${RELEASE_TAG} --tag gcr.io/solo-public/docs/portal-backstage-backend:latest . 
           docker push gcr.io/solo-public/docs/portal-backstage-backend:${RELEASE_TAG}
           docker push gcr.io/solo-public/docs/portal-backstage-backend:latest
