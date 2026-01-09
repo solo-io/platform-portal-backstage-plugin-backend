@@ -25,12 +25,10 @@ jobs:
         with:
           node-version-file: ".nvmrc"
 
-      - name: install yarn
+      - name: Enable Corepack and install yarn
         run: |
-          chmod +x ./ci/scripts/install-yarn.sh
-          ./ci/scripts/install-yarn.sh
-          yarn set version 4.x
-          yarn set version stable
+          corepack enable
+          corepack prepare yarn@stable --activate
 
       - name: Setup Git
         run: |
@@ -58,13 +56,17 @@ jobs:
             git push origin $RELEASE_BRANCH 
           fi
 
+      - name: Navigate to backstage project
+        run: |
+          cd ./backstage
+
       - name: Update version in package.json
         run: |
           RELEASE_BRANCH=$(echo $RELEASE_TAG | sed 's|\.[0-9]*$|\.x|g')
           RELEASE_VERSION=$(echo $RELEASE_TAG | sed 's|v||g')
-          sed -i "s|\"version\"\:[[:space:]]*\"[0-9]*\.[0-9]*\.[0-9]*\"|\"version\"\: \"$RELEASE_VERSION\"|" ./backstage/plugins/platform-portal-backstage-plugin-backend/package.json
-          sed -i "s|backend\/blob\/main\/|backend\/blob\/$RELEASE_BRANCH\/|" ./backstage/plugins/platform-portal-backstage-plugin-backend/package.json || true
-          git add ./backstage/plugins/platform-portal-backstage-plugin-backend/package.json || true
+          sed -i "s|\"version\"\:[[:space:]]*\"[0-9]*\.[0-9]*\.[0-9]*\"|\"version\"\: \"$RELEASE_VERSION\"|" ./plugins/platform-portal-backstage-plugin-backend/package.json
+          sed -i "s|backend\/blob\/main\/|backend\/blob\/$RELEASE_BRANCH\/|" ./plugins/platform-portal-backstage-plugin-backend/package.json || true
+          git add ./plugins/platform-portal-backstage-plugin-backend/package.json || true
           git commit -m "Update package.json version information for $RELEASE_TAG" || true
           git push origin $RELEASE_BRANCH
 
@@ -81,7 +83,7 @@ jobs:
       - name: Authenticate and publish to NPM
         run: |
           npm config set //registry.npmjs.org/:_authToken $NPM_ACCESS_TOKEN
-          npm publish ./backstage/plugins/platform-portal-backstage-plugin-backend
+          npm publish ./plugins/platform-portal-backstage-plugin-backend
 
       #
       # GCR Image
@@ -104,7 +106,6 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          cd ./backstage
           DOCKER_BUILDKIT=1 docker build -f ./packages/backend/Dockerfile --tag gcr.io/solo-public/docs/portal-backstage-backend:${RELEASE_TAG} --tag gcr.io/solo-public/docs/portal-backstage-backend:latest . 
           docker push gcr.io/solo-public/docs/portal-backstage-backend:${RELEASE_TAG}
           docker push gcr.io/solo-public/docs/portal-backstage-backend:latest
