@@ -27,8 +27,10 @@ type ApisEndpointResponseType =
   | ApiProductSummary[]
   | null;
 
-
-type EntityTransformation = (entity: Entity, api: ApiVersionExtended | API) => Promise<Entity>
+type EntityTransformation = (
+  entity: Entity,
+  api: ApiVersionExtended | API,
+) => Promise<Entity>;
 
 /**
  * Provides API entities from the Gloo Platform Portal REST server.
@@ -98,7 +100,6 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     this.updateApisEndpoint();
   }
 
-
   //
   // 1. Init class
   //
@@ -106,7 +107,7 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     logger: LoggerService,
     config: Config,
     scheduler: SchedulerService,
-    entityTransformation?: EntityTransformation
+    entityTransformation?: EntityTransformation,
   ) {
     this.logger = logger;
     this.config = config;
@@ -539,7 +540,10 @@ export class GlooPlatformPortalProvider implements EntityProvider {
     return processedAPIs;
   }
 
-  private async applyEntityTransformation(entity: Entity, api: ApiVersionExtended | API) {
+  private async applyEntityTransformation(
+    entity: Entity,
+    api: ApiVersionExtended | API,
+  ) {
     if (!!this.entityTransformation) {
       return await this.entityTransformation(entity, api);
     }
