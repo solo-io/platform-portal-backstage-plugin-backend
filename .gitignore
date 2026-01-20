@@ -1,1 +1,7 @@
 .DS_Store
+
+.idea
+.yarn
+node_modules
+packages
+plugins
