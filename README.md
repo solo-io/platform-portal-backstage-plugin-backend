@@ -15,6 +15,28 @@ So for updating dependencies:
 - The `app-config.yaml` file should be updated to include the YAML from the readme.
 - The `./backstage-old` folder can be deleted.
 
+```
+mv ./backstage ./backstage-old
+npx @backstage/create-app@latest
+mkdir -p backstage/plugins/platform-portal-backstage-plugin-backend
+cp -rf backstage-old/plugins/platform-portal-backstage-plugin-backend/* backstage/plugins/platform-portal-backstage-plugin-backend
+cd backstage
+yarn tsc
+cd ..
+mkdir -p backstage/packages/backend
+cp -rf backstage-old/packages/backend/* backstage/packages/backend
+cp backstage-old/app-config.yaml backstage/app-config.yaml
+cp backstage-old/README.md backstage/README.md
+
+# Ensure the `resolutions` in all `package.json` files remain
+# This needs to be done manually
+
+cd backstage
+yarn install
+
+rm -rf ./backstage-old
+```
+
 Then to test base functionality:
 
 - Make sure that postgres is running as per the Readme instructions.
