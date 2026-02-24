@@ -5,12 +5,15 @@ on:
     types:
       - created
 
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
 jobs:
   branchAndPublishToNpmAndDocker:
     runs-on: ubuntu-24.04
 
     env:
-      NPM_ACCESS_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
       RELEASE_TAG: ${{ github.event.release.tag_name }}
       GIT_USER_NAME: soloio-bot
       GIT_USER_EMAIL: soloio-bot@github.com
@@ -24,6 +27,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version-file: ".nvmrc"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Enable Corepack and install yarn
         run: |
@@ -80,9 +84,8 @@ jobs:
           yarn tsc || true
           yarn build:all
 
-      - name: Authenticate and publish to NPM
+      - name: Publish to NPM with OIDC
         run: |
-          npm config set //registry.npmjs.org/:_authToken $NPM_ACCESS_TOKEN
           npm publish ./plugins/platform-portal-backstage-plugin-backend
 
       #
