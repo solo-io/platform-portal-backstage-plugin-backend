@@ -51,7 +51,17 @@
     "@octokit/request-error": "^6.1.5",
     "markdown-it": "^14.1.0",
     "codemirror": "^6.0.1",
-    "prismjs": "^1.29.0"
+    "prismjs": "^1.29.0",
+    "yauzl": ">=3.2.1",
+    "immutable": ">=3.8.3",
+    "multer": ">=2.1.0",
+    "node-forge": ">=1.4.0",
+    "@backstage/plugin-techdocs-node": ">=1.14.3",
+    "@backstage/plugin-auth-backend": ">=0.27.1",
+    "@backstage/plugin-scaffolder-backend": ">=3.1.5",
+    "file-type": ">=21.3.1",
+    "dompurify": ">=3.3.2",
+    "serialize-javascript": ">=7.0.5"
   },
   "prettier": "@backstage/cli/config/prettier",
   "lint-staged": {
