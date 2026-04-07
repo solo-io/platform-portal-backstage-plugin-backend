@@ -51,8 +51,8 @@ jobs:
           path: e2e/playwright-report/
           retention-days: 30
 
-      - name: Upload failure screenshots
-        if: failure()
+      - name: Upload test results and screenshots
+        if: always()
         uses: actions/upload-artifact@v6
         with:
           name: test-results

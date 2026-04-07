@@ -33,4 +33,7 @@ test('catalog shows all APIs from the mock portal', async ({ page }) => {
 
   // Verify petstore-api-v2 appears in the list
   await expect(page.getByText('petstore-api-v2')).toBeVisible();
+
+  // Capture a screenshot of the loaded API docs page
+  await page.screenshot({ path: 'test-results/api-docs-page.png', fullPage: true });
 });
