@@ -12,10 +12,21 @@
 # Alternatively, there is also a multi-stage Dockerfile documented here:
 # https://backstage.io/docs/deployment/docker#multi-stage-build
 
-FROM node:24.13.0-trixie-slim
+FROM node:24.13.1-trixie-slim
 
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
+
+# Upgrade OS packages with known CVEs
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      dpkg=1.22.22 \
+      libc-bin=2.41-12+deb13u2 \
+      libc6=2.41-12+deb13u2 \
+      libsqlite3-0=3.46.1-7+deb13u1 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
