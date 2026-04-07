@@ -80,7 +80,8 @@
     "undici": ">=6.24.0",
     "ws": ">=8.17.1",
     "yaml": ">=1.10.3",
-    "@tootallnate/once": ">=3.0.1"
+    "@tootallnate/once": ">=3.0.1",
+    "esbuild": ">=0.25.0"
   },
   "prettier": "@backstage/cli/config/prettier",
   "lint-staged": {

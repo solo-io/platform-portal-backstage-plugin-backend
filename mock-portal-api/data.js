@@ -51,6 +51,53 @@ const openApiSpec = {
   },
 };
 
+const ordersSpec = {
+  info: { title: "Orders API", version: "1.0.0" },
+  servers: [{ url: "http://localhost:31080" }],
+  paths: {
+    "/orders": {
+      get: {
+        summary: "List all orders",
+        operationId: "listOrders",
+        responses: { 200: { description: "A list of orders" } },
+      },
+      post: {
+        summary: "Create an order",
+        operationId: "createOrder",
+        responses: { 201: { description: "Order created" } },
+      },
+    },
+    "/orders/{id}": {
+      get: {
+        summary: "Get an order by ID",
+        operationId: "getOrder",
+        parameters: [
+          {
+            name: "id",
+            in: "path",
+            required: true,
+            schema: { type: "string" },
+          },
+        ],
+        responses: { 200: { description: "A single order" } },
+      },
+    },
+  },
+  components: {
+    schemas: {
+      Order: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          product: { type: "string" },
+          quantity: { type: "integer" },
+          status: { type: "string" },
+        },
+      },
+    },
+  },
+};
+
 const petStoreSpec = {
   info: { title: "Petstore API", version: "2.0.0" },
   servers: [{ url: "http://localhost:31080" }],
@@ -115,6 +162,21 @@ const gmgApis = [
     openapiSpec: petStoreSpec,
     openapiSpecFetchErr: null,
   },
+  {
+    apiProductId: "orders-api",
+    apiProductDisplayName: "Orders API",
+    apiVersion: "v1",
+    apiId: "orders-api-v1",
+    contact: "commerce-team@example.com",
+    customMetadata: { team: "commerce" },
+    description: "REST API for managing orders",
+    license: "MIT",
+    termsOfService: "https://example.com/tos",
+    title: "Orders API",
+    usagePlans: ["gold"],
+    openapiSpec: ordersSpec,
+    openapiSpecFetchErr: null,
+  },
 ];
 
 // ----- GG (Gloo Gateway) format: API products + versions -----
@@ -126,7 +188,7 @@ const ggApiProducts = [
     id: "tracks-api",
     name: "Tracks API",
     updatedAt: "2024-06-01T12:00:00Z",
-    versionsCount: 2,
+    versionsCount: 1,
   },
   {
     createdAt: "2024-03-20T08:00:00Z",
@@ -134,6 +196,14 @@ const ggApiProducts = [
     id: "petstore-api",
     name: "Petstore API",
     updatedAt: "2024-05-15T09:30:00Z",
+    versionsCount: 1,
+  },
+  {
+    createdAt: "2024-05-01T10:00:00Z",
+    description: "REST API for managing orders",
+    id: "orders-api",
+    name: "Orders API",
+    updatedAt: "2024-06-10T08:00:00Z",
     versionsCount: 1,
   },
 ];
@@ -151,17 +221,6 @@ const ggApiVersions = {
       title: "Tracks REST API v1",
       updatedAt: "2024-06-01T12:00:00Z",
     },
-    {
-      apiSpec: openApiSpec,
-      createdAt: "2024-04-10T14:00:00Z",
-      documentation: "Full documentation for Tracks API v2",
-      id: "tracks-api-v2",
-      name: "v2",
-      publicVisible: false,
-      status: "DRAFT",
-      title: "Tracks REST API v2",
-      updatedAt: "2024-06-01T12:00:00Z",
-    },
   ],
   "petstore-api": [
     {
@@ -176,13 +235,26 @@ const ggApiVersions = {
       updatedAt: "2024-05-15T09:30:00Z",
     },
   ],
+  "orders-api": [
+    {
+      apiSpec: ordersSpec,
+      createdAt: "2024-05-01T10:00:00Z",
+      documentation: "Full documentation for Orders API v1",
+      id: "orders-api-v1",
+      name: "v1",
+      publicVisible: true,
+      status: "APPROVED",
+      title: "Orders API v1",
+      updatedAt: "2024-06-10T08:00:00Z",
+    },
+  ],
 };
 
 // Map apiId -> OpenAPI spec for the /apis/:apiId/schema endpoint
 const apiSchemas = {
   "tracks-api-v1": openApiSpec,
-  "tracks-api-v2": openApiSpec,
   "petstore-api-v2": petStoreSpec,
+  "orders-api-v1": ordersSpec,
 };
 
 module.exports = {
