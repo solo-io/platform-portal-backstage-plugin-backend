@@ -1,5 +1,5 @@
 import { execSync, spawn, ChildProcess } from 'child_process';
-import { writeFileSync } from 'fs';
+import { writeFileSync, existsSync, copyFileSync, renameSync } from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
@@ -120,12 +120,26 @@ export default async function globalSetup() {
   await waitForUrl('http://localhost:31080/health', 15_000);
   console.log('Mock Portal API ready.');
 
-  // 6. Start Backstage (frontend + backend)
+  // 6. Install e2e app config as app-config.local.yaml (backing up any existing one)
+  const backstageDir = path.join(ROOT, 'backstage');
+  const localConfig = path.join(backstageDir, 'app-config.local.yaml');
+  const localConfigBackup = path.join(backstageDir, 'app-config.local.yaml.bak');
+  if (existsSync(localConfig)) {
+    renameSync(localConfig, localConfigBackup);
+    console.log('Backed up existing app-config.local.yaml');
+  }
+  copyFileSync(
+    path.join(__dirname, 'app-config.e2e.yaml'),
+    localConfig,
+  );
+  console.log('Installed app-config.e2e.yaml as app-config.local.yaml');
+
+  // 7. Start Backstage (frontend + backend)
   console.log('Starting Backstage...');
   const backstage = spawnProcess(
     'yarn',
     ['start'],
-    path.join(ROOT, 'backstage'),
+    backstageDir,
   );
 
   // 7. Wait for Backstage backend (accept any HTTP response — it may return 401/404)

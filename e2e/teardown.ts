@@ -1,7 +1,8 @@
 import { execSync } from 'child_process';
-import { readFileSync, unlinkSync, existsSync } from 'fs';
+import { readFileSync, unlinkSync, existsSync, renameSync } from 'fs';
 import * as path from 'path';
 
+const ROOT = path.resolve(__dirname, '..');
 const PID_FILE = path.join(__dirname, '.e2e-pids.json');
 
 function killProcessTree(pid: number) {
@@ -32,6 +33,17 @@ export default async function globalTeardown() {
     } catch (e) {
       console.warn('Warning cleaning up PIDs:', e);
     }
+  }
+
+  // Restore original app-config.local.yaml if backed up
+  const localConfig = path.join(ROOT, 'backstage', 'app-config.local.yaml');
+  const localConfigBackup = localConfig + '.bak';
+  if (existsSync(localConfigBackup)) {
+    renameSync(localConfigBackup, localConfig);
+    console.log('Restored original app-config.local.yaml');
+  } else if (existsSync(localConfig)) {
+    unlinkSync(localConfig);
+    console.log('Removed e2e app-config.local.yaml');
   }
 
   // Stop containers

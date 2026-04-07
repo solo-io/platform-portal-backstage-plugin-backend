@@ -1,0 +1,19 @@
+# This is copied over for e2e tests.
+backend:
+  database:
+    client: pg
+    connection:
+      host: localhost
+      port: 5432
+      user: postgres
+      password: password
+
+glooPlatformPortal:
+  backend:
+    debugLogging: true
+    portalServerUrl: http://localhost:31080/v1
+    clientId: backstage
+    clientSecret: mock-secret
+    tokenEndpoint: http://localhost:31080/auth/realms/master/protocol/openid-connect/token
+    syncFrequency:
+      seconds: 5
