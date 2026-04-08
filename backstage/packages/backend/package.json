@@ -46,7 +46,7 @@
     "@solo.io/platform-portal-backstage-plugin-backend": "link:../../plugins/platform-portal-backstage-plugin-backend",
     "app": "link:../app",
     "better-sqlite3": "^12.0.0",
-    "node-gyp": "^10.0.0",
+    "node-gyp": "^11.0.0",
     "pg": "^8.11.3"
   },
   "devDependencies": {
