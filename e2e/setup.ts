@@ -1,5 +1,11 @@
 import { execSync, spawn, ChildProcess } from 'child_process';
-import { writeFileSync, existsSync, copyFileSync, renameSync } from 'fs';
+import {
+  writeFileSync,
+  readFileSync,
+  existsSync,
+  copyFileSync,
+  renameSync,
+} from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
@@ -133,6 +139,42 @@ export default async function globalSetup() {
     localConfig,
   );
   console.log('Installed app-config.e2e.yaml as app-config.local.yaml');
+
+  // 6b. Disable the @rspack/dev-server compile-error overlay.
+  // The Backstage dev build emits a harmless WARNING from
+  // @protobufjs/inquire (dynamic require), which the dev-server renders as a
+  // fullscreen iframe overlay that intercepts pointer events and blocks
+  // every UI interaction in the e2e browser. We turn the overlay's `show`
+  // function into a no-op so the iframe is never appended to the page.
+  const overlayPath = path.join(
+    backstageDir,
+    'node_modules',
+    '@rspack',
+    'dev-server',
+    'client',
+    'overlay.js',
+  );
+  if (existsSync(overlayPath)) {
+    const marker = '/* e2e-overlay-disabled */';
+    const src = readFileSync(overlayPath, 'utf-8');
+    if (!src.includes(marker)) {
+      const target =
+        "function show(type, messages, trustedTypesPolicyName, messageSource) {";
+      const replacement = `${target} ${marker} return;`;
+      if (!src.includes(target)) {
+        console.warn(
+          'WARN: rspack dev-server overlay.js show() signature not found — overlay may still appear.',
+        );
+      } else {
+        writeFileSync(overlayPath, src.replace(target, replacement));
+        console.log('Patched @rspack/dev-server overlay to suppress compile-warning iframe.');
+      }
+    }
+  } else {
+    console.warn(
+      `WARN: ${overlayPath} not found — skipping overlay patch (overlay may still appear).`,
+    );
+  }
 
   // 7. Start Backstage (frontend + backend)
   console.log('Starting Backstage...');
