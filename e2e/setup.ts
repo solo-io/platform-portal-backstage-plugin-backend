@@ -140,39 +140,49 @@ export default async function globalSetup() {
   );
   console.log('Installed app-config.e2e.yaml as app-config.local.yaml');
 
-  // 6b. Disable the @rspack/dev-server compile-error overlay.
-  // The Backstage dev build emits a harmless WARNING from
-  // @protobufjs/inquire (dynamic require), which the dev-server renders as a
-  // fullscreen iframe overlay that intercepts pointer events and blocks
-  // every UI interaction in the e2e browser. We turn the overlay's `show`
-  // function into a no-op so the iframe is never appended to the page.
-  const overlayPath = path.join(
+  // 6b. Silence the @protobufjs/inquire "Critical dependency" warning in the
+  // frontend rspack build. The warning is emitted because @protobufjs/inquire
+  // uses an opportunistic `require(moduleName)` to load Node-only polyfills;
+  // in the browser bundle the call always fails into the catch and returns
+  // null, so the warning has no runtime effect. Without this suppression, the
+  // dev-server renders the warning as a fullscreen iframe overlay that
+  // intercepts pointer events and blocks every UI interaction in tests.
+  const cliConfigPath = path.join(
     backstageDir,
     'node_modules',
-    '@rspack',
-    'dev-server',
-    'client',
-    'overlay.js',
+    '@backstage',
+    'cli',
+    'dist',
+    'modules',
+    'build',
+    'lib',
+    'bundler',
+    'config.cjs.js',
   );
-  if (existsSync(overlayPath)) {
-    const marker = '/* e2e-overlay-disabled */';
-    const src = readFileSync(overlayPath, 'utf-8');
+  if (existsSync(cliConfigPath)) {
+    const marker = '/* e2e-ignoreWarnings */';
+    const src = readFileSync(cliConfigPath, 'utf-8');
     if (!src.includes(marker)) {
       const target =
-        "function show(type, messages, trustedTypesPolicyName, messageSource) {";
-      const replacement = `${target} ${marker} return;`;
+        '    performance: {\n      hints: false\n      // we check the gzip size instead\n    },';
       if (!src.includes(target)) {
         console.warn(
-          'WARN: rspack dev-server overlay.js show() signature not found — overlay may still appear.',
+          'WARN: @backstage/cli rspack config performance block not found — protobufjs warning may surface as overlay.',
         );
       } else {
-        writeFileSync(overlayPath, src.replace(target, replacement));
-        console.log('Patched @rspack/dev-server overlay to suppress compile-warning iframe.');
+        const replacement =
+          target +
+          `\n    ${marker}\n` +
+          '    ignoreWarnings: [{ module: /@protobufjs\\/inquire/ }],';
+        writeFileSync(cliConfigPath, src.replace(target, replacement));
+        console.log(
+          'Patched @backstage/cli rspack config to ignore @protobufjs/inquire warning.',
+        );
       }
     }
   } else {
     console.warn(
-      `WARN: ${overlayPath} not found — skipping overlay patch (overlay may still appear).`,
+      `WARN: ${cliConfigPath} not found — skipping rspack ignoreWarnings patch.`,
     );
   }
 
