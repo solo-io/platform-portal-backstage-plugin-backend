@@ -23,9 +23,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends \
       dpkg=1.22.22 \
-      libc-bin=2.41-12+deb13u2 \
-      libc6=2.41-12+deb13u2 \
-      libsqlite3-0=3.46.1-7+deb13u1 && \
+      libc-bin=2.41-12+deb13u3 \
+      libc6=2.41-12+deb13u3 \
+      libcap2=1:2.75-10+deb13u1 \
+      libsqlite3-0=3.46.1-7+deb13u1 \
+      libsystemd0=257.13-1~deb13u1 \
+      libudev1=257.13-1~deb13u1 \
+      sed=4.9-2+deb13u1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
