@@ -64,7 +64,7 @@
     "serialize-javascript": ">=7.0.5",
     "@backstage/integration": "^1.20.1",
     "@xmldom/xmldom": ">=0.9.10",
-    "brace-expansion": ">=1.1.13",
+    "brace-expansion": ">=5.0.6",
     "cookie": ">=0.7.0",
     "fast-xml-parser": ">=5.7.0",
     "flatted": ">=3.4.0",
@@ -78,10 +78,15 @@
     "tar": ">=6.2.2",
     "underscore": ">=1.13.8",
     "undici": ">=6.24.0",
-    "ws": ">=8.17.1",
+    "ws": ">=8.20.1",
     "yaml": ">=1.10.3",
     "@tootallnate/once": ">=3.0.1",
-    "esbuild": ">=0.25.0"
+    "esbuild": ">=0.25.0",
+    "@babel/plugin-transform-modules-systemjs": ">=7.29.4",
+    "fast-uri": ">=3.1.2",
+    "protobufjs": ">=7.5.8",
+    "vm2": ">=3.11.3",
+    "webpack-dev-server": ">=5.2.4"
   },
   "prettier": "@backstage/cli/config/prettier",
   "lint-staged": {

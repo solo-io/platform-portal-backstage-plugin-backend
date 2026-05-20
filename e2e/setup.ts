@@ -186,6 +186,45 @@ export default async function globalSetup() {
     );
   }
 
+  // 6c. Disable the webpack-dev-server client overlay entirely so no iframe
+  // can intercept pointer events during tests, regardless of which warnings or
+  // errors trigger it.
+  const cliServerPath = path.join(
+    backstageDir,
+    'node_modules',
+    '@backstage',
+    'cli',
+    'dist',
+    'modules',
+    'build',
+    'lib',
+    'bundler',
+    'server.cjs.js',
+  );
+  if (existsSync(cliServerPath)) {
+    const serverMarker = '/* e2e-overlayDisabled */';
+    const serverSrc = readFileSync(cliServerPath, 'utf-8');
+    if (!serverSrc.includes(serverMarker)) {
+      const serverTarget = 'client: {\n        webSocketURL: { hostname: host, port }\n      },';
+      if (!serverSrc.includes(serverTarget)) {
+        console.warn(
+          'WARN: @backstage/cli server config client block not found — overlay may surface.',
+        );
+      } else {
+        const serverReplacement =
+          `client: {\n        webSocketURL: { hostname: host, port },\n        ${serverMarker}\n        overlay: false\n      },`;
+        writeFileSync(cliServerPath, serverSrc.replace(serverTarget, serverReplacement));
+        console.log(
+          'Patched @backstage/cli server config to disable webpack-dev-server overlay.',
+        );
+      }
+    }
+  } else {
+    console.warn(
+      `WARN: ${cliServerPath} not found — skipping overlay disable patch.`,
+    );
+  }
+
   // 7. Start Backstage (frontend + backend)
   console.log('Starting Backstage...');
   const backstage = spawnProcess(
