@@ -3,6 +3,4 @@
 .idea
 .yarn
 node_modules
-packages
-plugins
 .omc
