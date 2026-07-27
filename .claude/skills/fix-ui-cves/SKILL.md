@@ -1,6 +1,6 @@
 ---
 name: fix-ui-cves
-description: "Audit and remediate security vulnerabilities in a frontend package (JS deps + Dockerfile OS packages) using yarn audit, trivy, and grype."
+description: "Audit and remediate security vulnerabilities in a frontend package (JS deps, Dockerfile OS packages, and the built container image) using yarn audit, trivy, grype, and snyk."
 ---
 
 # Fix UI CVEs
@@ -17,6 +17,7 @@ Before starting, create a todo list with these items:
 - Find + scan UI Dockerfiles for OS CVEs
 - Fix each Dockerfile OS CVE
 - Re-scan Dockerfile to confirm fixes
+- Scan the built image (OS + app layers)
 - Final scan gate (no fixable CVEs remaining)
 - Peer dependency alignment
 - Prune resolutions
@@ -125,13 +126,44 @@ bash .claude/skills/fix-ui-cves/scripts/scan-dockerfile.sh <DOCKERFILE>
 
 If the CVE still appears, verify the upgraded package version satisfies the fix version and retry step 7.
 
-## 9. Final scan gate
+## 9. Scan the built image
 
-Re-run both the JS and Dockerfile scans one final time:
+Steps 6–8 only look at the base image named in the `FROM` line. That misses the
+application dependencies installed into the image — the layer that actually
+ships. Build the image (or pull the published tag) and scan the real artifact:
+
+```sh
+# Scans OS packages AND application dependencies, with trivy + snyk.
+bash .claude/skills/fix-ui-cves/scripts/scan-image.sh <IMAGE_REF>
+```
+
+Notes on reading the output:
+
+- **Only the `fixable` counts are actionable.** Distro images carry hundreds of
+  unfixed CVEs that cannot be remediated from this repo. The script prints
+  `FIXABLE CRITICAL+HIGH` — that is the number that should be zero.
+- **Do not trust a clean `snyk container test` on its own.** Measured against a
+  released Backstage backend image, Snyk reported 1 low while trivy found 2
+  critical + 4 high *fixable* OS issues and 29 critical + 175 high fixable Node
+  dependencies. Snyk did not report the Node application layer at all, even
+  with `--app-vulns`. trivy is the primary signal; Snyk is a cross-check.
+- **Check the image is not stale.** The script prints the image's OS and Node
+  version. If they do not match the `FROM` line in the Dockerfile, the tag you
+  scanned predates the current Dockerfile and the results describe an old
+  artifact, not what would be built today.
+
+Manifest scanning and image scanning answer different questions, so run both:
+`package.json`/lockfile scanning tells you what a consumer of the published
+package inherits; image scanning tells you what ships in the container.
+
+## 10. Final scan gate
+
+Re-run the JS, Dockerfile, and image scans one final time:
 
 ```sh
 bash .claude/skills/fix-ui-cves/scripts/scan.sh <UI_DIR> <PKG_MANAGER>
 bash .claude/skills/fix-ui-cves/scripts/scan-dockerfile.sh <DOCKERFILE>  # if Dockerfiles exist
+bash .claude/skills/fix-ui-cves/scripts/scan-image.sh <IMAGE_REF>        # if an image is built
 ```
 
 Evaluate the results:
@@ -140,22 +172,22 @@ Evaluate the results:
 - **CVEs with no fix available** → these are acceptable. Note them in the final report but do **not** block the PR.
 - **No remaining fixable CVEs** → scan passed. Continue.
 
-## 10. Peer dependency alignment (AI)
+## 11. Peer dependency alignment (AI)
 
 After upgrading a suite package (storybook, eslint, babel, jest), check sibling packages for mismatched peer deps. Upgrade siblings to match, or update import paths if the suite consolidated APIs into the root package.
 
-## 11. Prune resolutions (AI)
+## 12. Prune resolutions (AI)
 
 For each resolution added: remove it, run `$PKG_MANAGER install`, check the lockfile. If the safe version still resolves naturally, leave it removed — otherwise restore.
 
-## 12. Build
+## 13. Build
 
 ```sh
 # Output: 1=passed, 0=failed
 bash .claude/skills/fix-ui-cves/scripts/build.sh <UI_DIR> <PKG_MANAGER>
 ```
 
-## 13. Verify dev server starts
+## 14. Verify dev server starts
 
 ```sh
 # Output: 1=passed, 0=failed
@@ -164,7 +196,7 @@ bash .claude/skills/fix-ui-cves/scripts/verify.sh <UI_DIR> <PKG_MANAGER>
 
 Starts whichever of `start` or `dev` exists in package.json, waits 20s to confirm the process doesn't crash, then kills it. If neither script exists, the check is skipped.
 
-## 14. Report
+## 15. Report
 
 List: direct upgrades, resolutions added/removed, peer dep changes, Dockerfile OS package changes, scanner results. Include any CVEs skipped due to no fix being available.
 
