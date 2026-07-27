@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       dpkg=1.22.22 \
       libc-bin=2.41-12+deb13u3 \
       libc6=2.41-12+deb13u3 \
-      libcap2=1:2.75-10+deb13u1 \
+      libcap2=1:2.75-10+deb13u1+b1 \
       libsqlite3-0=3.46.1-7+deb13u1 \
       libsystemd0=257.13-1~deb13u1 \
       libudev1=257.13-1~deb13u1 \
