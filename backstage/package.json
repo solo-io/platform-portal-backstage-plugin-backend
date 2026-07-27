@@ -90,6 +90,7 @@
     "adm-zip": ">=0.6.0",
     "js-cookie": ">=3.0.7",
     "qs": ">=6.15.2",
+    "@material-table/core/uuid": "^3.4.0",
     "uuid": ">=11.1.1",
     "@yarnpkg/parsers/js-yaml": ">=3.15.0 <4",
     "js-yaml": ">=4.3.0 <5"
