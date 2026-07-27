@@ -1,0 +1,33 @@
+diff --git a/openBrowser.js b/openBrowser.js
+index babdc9b854ed1c8ba0d2d08d10b4c6b1d91c3c34..7ab8ed3733758fe26b90ba7d5343054c2b5a9b14 100644
+--- a/openBrowser.js
++++ b/openBrowser.js
+@@ -9,6 +9,7 @@
+ 
+ var chalk = require('chalk');
+ var execSync = require('child_process').execSync;
++var execFileSync = require('child_process').execFileSync;
+ var spawn = require('cross-spawn');
+ var open = require('open');
+ 
+@@ -89,12 +90,14 @@ function startBrowserProcess(browser, url, args) {
+         // Try our best to reuse existing tab
+         // on OSX Chromium-based browser with AppleScript
+         execSync('ps cax | grep "' + chromiumBrowser + '"');
+-        execSync(
+-          'osascript openChrome.applescript "' +
+-            encodeURI(url) +
+-            '" "' +
+-            chromiumBrowser +
+-            '"',
++        // CVE-2026-14802: `url` used to be interpolated into a shell
++        // command string. encodeURI leaves `$`, `(` and `)` intact, and
++        // `$(...)` is still evaluated inside double quotes, so a crafted URL
++        // could execute arbitrary commands. execFileSync passes the arguments
++        // straight to osascript with no shell in between.
++        execFileSync(
++          'osascript',
++          ['openChrome.applescript', encodeURI(url), chromiumBrowser],
+           {
+             cwd: __dirname,
+             stdio: 'ignore',

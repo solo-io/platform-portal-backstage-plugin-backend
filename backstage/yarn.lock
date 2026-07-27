@@ -32123,7 +32123,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dev-utils@npm:^12.0.0-next.60":
+"react-dev-utils@npm:12.0.1":
   version: 12.0.1
   resolution: "react-dev-utils@npm:12.0.1"
   dependencies:
@@ -32152,6 +32152,38 @@ __metadata:
     strip-ansi: "npm:^6.0.1"
     text-table: "npm:^0.2.0"
   checksum: 10c0/94bc4ee5014290ca47a025e53ab2205c5dc0299670724d46a0b1bacbdd48904827b5ae410842d0a3a92481509097ae032e4a9dc7ca70db437c726eaba6411e82
+  languageName: node
+  linkType: hard
+
+"react-dev-utils@patch:react-dev-utils@npm%3A12.0.1#~/.yarn/patches/react-dev-utils-npm-12.0.1-83ba06e3ee.patch":
+  version: 12.0.1
+  resolution: "react-dev-utils@patch:react-dev-utils@npm%3A12.0.1#~/.yarn/patches/react-dev-utils-npm-12.0.1-83ba06e3ee.patch::version=12.0.1&hash=d07415"
+  dependencies:
+    "@babel/code-frame": "npm:^7.16.0"
+    address: "npm:^1.1.2"
+    browserslist: "npm:^4.18.1"
+    chalk: "npm:^4.1.2"
+    cross-spawn: "npm:^7.0.3"
+    detect-port-alt: "npm:^1.1.6"
+    escape-string-regexp: "npm:^4.0.0"
+    filesize: "npm:^8.0.6"
+    find-up: "npm:^5.0.0"
+    fork-ts-checker-webpack-plugin: "npm:^6.5.0"
+    global-modules: "npm:^2.0.0"
+    globby: "npm:^11.0.4"
+    gzip-size: "npm:^6.0.0"
+    immer: "npm:^9.0.7"
+    is-root: "npm:^2.1.0"
+    loader-utils: "npm:^3.2.0"
+    open: "npm:^8.4.0"
+    pkg-up: "npm:^3.1.0"
+    prompts: "npm:^2.4.2"
+    react-error-overlay: "npm:^6.0.11"
+    recursive-readdir: "npm:^2.2.2"
+    shell-quote: "npm:^1.7.3"
+    strip-ansi: "npm:^6.0.1"
+    text-table: "npm:^0.2.0"
+  checksum: 10c0/e06221f551e178e2a20d2cafa62e278f563cc400d55969a041b806fefd0e1cdfbb5ccdad873e8ad2c955e98bcea241ca137bbe2a5b1e4dfaf475f864f333659d
   languageName: node
   linkType: hard
 
