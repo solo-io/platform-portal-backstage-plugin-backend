@@ -4,7 +4,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 
 # Read required version from .nvmrc; strip leading 'v'.
 required_version() { cat "$REPO_ROOT/.nvmrc" 2>/dev/null | tr -d 'v \n'; }
