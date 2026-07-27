@@ -5,13 +5,18 @@ export default defineConfig({
   globalSetup: './setup.ts',
   globalTeardown: './teardown.ts',
   timeout: 180_000,
+  // globalSetup builds the frontend bundle and the Docker image before any
+  // test runs, which dominates the wall clock on a cold cache.
+  globalTimeout: 45 * 60_000,
   expect: {
     timeout: 30_000,
   },
   retries: 0,
   reporter: [['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:3000',
+    // The image serves the app and the API from one port via
+    // @backstage/plugin-app-backend; there is no separate dev server on 3000.
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:7007',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
     video: 'on',

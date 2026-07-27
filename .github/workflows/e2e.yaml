@@ -13,6 +13,10 @@ env:
 jobs:
   e2e:
     runs-on: ubuntu-24.04
+    # globalSetup builds the frontend bundle and the backend Docker image
+    # before any test runs, so this job is substantially longer than a
+    # dev-server run. Bounded so a hung build cannot burn a full 6 hours.
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: e2e
