@@ -1,8 +1,7 @@
 import { execSync } from 'child_process';
-import { readFileSync, unlinkSync, existsSync, renameSync } from 'fs';
+import { readFileSync, unlinkSync, existsSync } from 'fs';
 import * as path from 'path';
 
-const ROOT = path.resolve(__dirname, '..');
 const PID_FILE = path.join(__dirname, '.e2e-pids.json');
 
 function killProcessTree(pid: number) {
@@ -25,30 +24,18 @@ export default async function globalTeardown() {
         console.log(`Stopping Mock API (PID ${pids.mockApi})...`);
         killProcessTree(pids.mockApi);
       }
-      if (pids.backstage) {
-        console.log(`Stopping Backstage (PID ${pids.backstage})...`);
-        killProcessTree(pids.backstage);
-      }
       unlinkSync(PID_FILE);
     } catch (e) {
       console.warn('Warning cleaning up PIDs:', e);
     }
   }
 
-  // Restore original app-config.local.yaml if backed up
-  const localConfig = path.join(ROOT, 'backstage', 'app-config.local.yaml');
-  const localConfigBackup = localConfig + '.bak';
-  if (existsSync(localConfigBackup)) {
-    renameSync(localConfigBackup, localConfig);
-    console.log('Restored original app-config.local.yaml');
-  } else if (existsSync(localConfig)) {
-    unlinkSync(localConfig);
-    console.log('Removed e2e app-config.local.yaml');
-  }
-
-  // Stop containers
+  // Stop containers. Backstage now runs as a container too, rather than as a
+  // `yarn start` child process, so there is no app-config.local.yaml to restore.
   console.log('Stopping Docker containers...');
-  execSync('docker rm -f e2e-postgres e2e-keycloak 2>/dev/null || true');
+  execSync(
+    'docker rm -f e2e-backstage e2e-postgres e2e-keycloak 2>/dev/null || true',
+  );
 
   console.log('\n=== E2E Teardown: Complete ===\n');
 }

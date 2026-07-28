@@ -13,6 +13,13 @@ env:
 jobs:
   e2e:
     runs-on: ubuntu-24.04
+    # globalSetup builds the frontend bundle and the backend Docker image
+    # before any test runs, so this job is longer than a dev-server run. A green
+    # run takes ~6 minutes, so 20 leaves ample headroom while still killing a
+    # hung build quickly. Playwright's globalTimeout is set below this so it
+    # fails the step itself and the artifact uploads still run — a job cancelled
+    # on this timeout skips them even with `if: always()`.
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: e2e
