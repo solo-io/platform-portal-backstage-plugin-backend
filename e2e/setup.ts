@@ -161,6 +161,20 @@ backend:
       user: postgres
       password: password
 
+# The app signs in with <SignInPage auto providers={['guest']} />, but the image
+# sets NODE_ENV=production, and the guest provider refuses to issue tokens
+# outside development unless this flag is set:
+#   plugin-auth-backend-module-guest-provider/authenticator: returns disabled
+#   when process.env.NODE_ENV !== 'development' && allowOutsideDev !== true
+# Without it the backend rejects guest sign-in, the frontend falls back to
+# rendering the "Guest / Enter" card, and no catalog page ever loads. This is
+# safe here because the flag lives only in this generated file, which is mounted
+# into the test container and never baked into the shipped image.
+auth:
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
 glooPlatformPortal:
   backend:
     debugLogging: true
