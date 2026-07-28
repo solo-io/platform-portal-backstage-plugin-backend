@@ -6,8 +6,10 @@ export default defineConfig({
   globalTeardown: './teardown.ts',
   timeout: 180_000,
   // globalSetup builds the frontend bundle and the Docker image before any
-  // test runs, which dominates the wall clock on a cold cache.
-  globalTimeout: 45 * 60_000,
+  // test runs, which dominates the wall clock on a cold cache. Kept under the
+  // 20-minute job timeout in .github/workflows/e2e.yaml so Playwright reports
+  // the timeout and the report/screenshot uploads still run.
+  globalTimeout: 18 * 60_000,
   expect: {
     timeout: 30_000,
   },
