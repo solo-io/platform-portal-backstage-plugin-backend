@@ -1,6 +1,15 @@
 .DS_Store
 
 .idea
-.yarn
 node_modules
 .omc
+
+# Yarn: ignore caches and machine-local state, but keep .yarn/releases and
+# .yarn/patches tracked — `yarn install --immutable` needs both. A blanket
+# `.yarn` here excluded the directory outright, which meant the
+# `!.yarn/patches` negation in backstage/.gitignore could never take effect
+# (git cannot re-include a path whose parent directory is excluded).
+**/.yarn/cache
+**/.yarn/unplugged
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
