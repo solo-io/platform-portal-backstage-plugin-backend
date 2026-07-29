@@ -1,6 +1,6 @@
-# Backstage With Gloo Platform Portal
+# Backstage With the Developer Portal Backend Plugin
 
-This is a [Backstage](https://backstage.io) App with the Gloo Platform Portal backend plugin installed. This plugin is located in the `./plugins/platform-portal-backstage-plugin-backend` folder. See the Readme in that folder for more information.
+This is a [Backstage](https://backstage.io) App with the developer portal backend plugin installed. This plugin is located in the `./plugins/platform-portal-backstage-plugin-backend` folder. See the Readme in that folder for more information.
 
 To start the app, run:
 
