@@ -1,4 +1,4 @@
-# 🌐 Gloo Platform Portal: Backstage Backend Plugin
+# 🌐 Developer Portal: Backstage Backend Plugin
 
 This is a plugin for Backstage. The plugin is located in `./backstage/plugins/platform-portal-backstage-plugin-backend`. See the Readme file there for more information.
 
@@ -48,7 +48,7 @@ There are two ways to test the plugin locally: with the **mock API server** or w
 
 ### Option 1: Mock Portal API (quick, no external dependencies)
 
-The `mock-portal-api/` folder contains a lightweight Express server that mocks all Gloo Platform Portal API endpoints.
+The `mock-portal-api/` folder contains a lightweight Express server that mocks all portal server API endpoints.
 
 ```bash
 cd mock-portal-api

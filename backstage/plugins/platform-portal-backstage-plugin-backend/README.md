@@ -3,8 +3,12 @@
 > [!NOTE]
 > This plugin works with the following portal server backends:
 >
-> - Gloo Gateway v1.18+
-> - Gloo Mesh Gateway v2.4.0+
+> - Solo Enterprise for kgateway v2.2+ (`GET /v1/api-products`)
+> - Gloo Gateway v1.18+ (`GET /v1/api-products`)
+> - Gloo Mesh Gateway v2.4.0+ (`GET /v1/apis`)
+>
+> The plugin detects which of these endpoints the portal server exposes at
+> startup, so no extra configuration is needed to pick one.
 
 ## Description
 
@@ -13,7 +17,7 @@ This plugin will create the following Backstage catalog entities and relate them
 - A `Group` with the name, `solo-io-service-accounts`.
 - A `User` with the name, `gloo-platform-portal-service-account`.
 - A `System` with the name, `gloo-platform-portal-apis`.
-- An `API` for each `apiVersion` of each `apiProduct` in your Gloo Platform Portal instance that the service account has access to. The API's name is a combination of the `apiProductId` and the `apiVersion` (`apiProductId-apiVersion`).
+- An `API` for each `apiVersion` of each `apiProduct` in your portal instance that the service account has access to. The API's name is a combination of the `apiProductId` and the `apiVersion` (`apiProductId-apiVersion`).
 
 ## Installation
 
@@ -136,7 +140,7 @@ Solo.io provides a demo Backstage image with the `@solo.io/platform-portal-backs
 
 To begin the demo, make sure that:
 
-- You can access the portal server and view the Gloo Platform APIs you have access to through a URL that Docker can access (like [http://localhost:31080/v1/apis](http://localhost:31080/v1/apis))
+- You can access the portal server and view the APIs you have access to through a URL that Docker can access (like [http://localhost:31080/v1/api-products](http://localhost:31080/v1/api-products), or `/v1/apis` on Gloo Mesh Gateway)
 - You have an authorization server (like Keycloak or Okta) running that Docker can access.
 
 Then run a Postgres container for the Backstage catalog (this creates an example user for the demo):
