@@ -9,13 +9,45 @@
 #
 # Once the commands have been run, you can build the image using `yarn build-image`
 #
-# Alternatively, there is also a multi-stage Dockerfile documented here:
-# https://backstage.io/docs/deployment/docker#multi-stage-build
+# Two stages, because `yarn workspaces focus` compiles better-sqlite3 and isolated-vm and
+# so needs python3, g++, build-essential and libsqlite3-dev. Those exist to produce
+# node_modules and are no use once it exists, but a single-stage build cannot put them
+# down again — they and everything they pull in stay in the shipped image, where a scanner
+# counts every one of them. Here they live in a stage that is thrown away, and only
+# node_modules crosses over.
 
-FROM node:24.20.0-trixie-slim
+FROM node:24.20.0-trixie-slim AS deps
 
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
+
+# Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
+# Plus the sqlite3 headers better-sqlite3 builds against; the runtime stage needs only the
+# library, which its pinned upgrade below already installs.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends python3 g++ build-essential libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+USER node
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy files needed by Yarn
+COPY --chown=node:node .yarn ./.yarn
+COPY --chown=node:node .yarnrc.yml ./
+
+# The skeleton contains the package.json of each package in the monorepo, and along with
+# yarn.lock and the root package.json, that's enough to run yarn install.
+COPY --chown=node:node yarn.lock package.json packages/backend/dist/skeleton.tar.gz ./
+RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
+
+RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
+    yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
+
+FROM node:24.20.0-trixie-slim
 
 # Upgrade OS packages with known CVEs
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -30,21 +62,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libsystemd0=257.13-1~deb13u1 \
       libudev1=257.13-1~deb13u1 \
       sed=4.9-2+deb13u1 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends python3 g++ build-essential && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install sqlite3 dependencies. You can skip this if you don't use sqlite3 in the image,
-# in which case you should also move better-sqlite3 to "devDependencies" in package.json.
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends libsqlite3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Remove the npm that ships inside the base image. Its bundled dependencies are
@@ -71,25 +88,23 @@ USER node
 # If this occurs, then ensure BuildKit is enabled (`DOCKER_BUILDKIT=1`) so the app dir is correctly created as `node`.
 WORKDIR /app
 
-# Copy files needed by Yarn
-COPY --chown=node:node .yarn ./.yarn
-COPY --chown=node:node .yarnrc.yml ./
-COPY --chown=node:node backstage.json ./
-
 # This switches many Node.js dependencies to production mode.
 ENV NODE_ENV=production
 
 # This disables node snapshot for Node 20 to work with the Scaffolder
 ENV NODE_OPTIONS="--no-node-snapshot"
 
-# Copy repo skeleton first, to avoid unnecessary docker cache invalidation.
-# The skeleton contains the package.json of each package in the monorepo,
-# and along with yarn.lock and the root package.json, that's enough to run yarn install.
+COPY --chown=node:node backstage.json ./
+
+# The same skeleton, so the workspace package.json layout node resolves against is here
+# too. Extracted rather than copied from the stage above, so this stage does not depend on
+# which directories that one happened to create.
 COPY --chown=node:node yarn.lock package.json packages/backend/dist/skeleton.tar.gz ./
 RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 
-RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
-    yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
+# The one thing worth carrying over. No yarn here: the backend is started with `node`, and
+# nodeLinker is node-modules, so nothing resolves through a Yarn runtime.
+COPY --from=deps --chown=node:node /app/node_modules ./node_modules
 
 # This will include the examples, if you don't need these simply remove this line
 COPY --chown=node:node examples ./examples
