@@ -56,11 +56,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
       dpkg=1.22.22 \
       gzip=1.13-1+deb13u1 \
-      libc-bin=2.41-12+deb13u3 \
-      libc6=2.41-12+deb13u3 \
+      libc-bin=2.41-12+deb13u4 \
+      libc6=2.41-12+deb13u4 \
       libcap2=1:2.75-10+deb13u1+b1 \
       libpcre2-8-0=10.46-1~deb13u2 \
-      libsqlite3-0=3.46.1-7+deb13u1 \
+      libsqlite3-0=3.46.1-7+deb13u2 \
       libsystemd0=257.13-1~deb13u1 \
       libudev1=257.13-1~deb13u1 \
       perl-base=5.40.1-6+deb13u1 \
