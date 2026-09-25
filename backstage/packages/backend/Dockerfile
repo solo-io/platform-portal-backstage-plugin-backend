@@ -22,8 +22,7 @@ FROM node:24.20.0-trixie-slim AS deps
 ENV PYTHON=/usr/bin/python3
 
 # Install isolate-vm dependencies, these are needed by the @backstage/plugin-scaffolder-backend.
-# Plus the sqlite3 headers better-sqlite3 builds against; the runtime stage needs only the
-# library, which its pinned upgrade below already installs.
+# Plus the sqlite3 headers better-sqlite3 builds against.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
@@ -47,41 +46,19 @@ RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
-FROM node:24.20.0-trixie-slim
+# Wolfi runtime: glibc, so the native modules built in the Debian stage above still load.
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:08df5982c3d27e70a4ce1607e3bb9af09d746f8722cf135a7694afef879fc5a2
 
-# Upgrade OS packages with known CVEs
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-      dpkg=1.22.22 \
-      gzip=1.13-1+deb13u1 \
-      libc-bin=2.41-12+deb13u4 \
-      libc6=2.41-12+deb13u4 \
-      libcap2=1:2.75-10+deb13u1+b1 \
-      libpcre2-8-0=10.46-1~deb13u2 \
-      libsqlite3-0=3.46.1-7+deb13u2 \
-      libsystemd0=257.13-1~deb13u1 \
-      libudev1=257.13-1~deb13u1 \
-      perl-base=5.40.1-6+deb13u1 \
-      sed=4.9-2+deb13u1 && \
-    rm -rf /var/lib/apt/lists/*
-
-# Remove the npm that ships inside the base image. Its bundled dependencies are
-# the only fixable CRITICAL/HIGH CVEs left in this image — brace-expansion 5.0.7
-# (CVE-2026-14257, CVE-2026-69152), ip-address 10.2.0 (CVE-2026-69192) and tar
-# 7.5.19 (CVE-2026-73566) — and they cannot be cleared any other way:
-#
-#   - No newer base image tag helps: 24.20.0 is the latest trixie-slim tag and
-#     still bundles npm 11.19.0 with all four.
-#   - `npm install -g npm@latest` does not clear them either, and would pull a
-#     second npm tree into the image just to patch one we do not use.
-#
-# Nothing here needs npm. This image builds with yarn (the base image provides
-# it from /opt/yarn-v1.22.22, outside npm's tree), corepack is a separate
-# package, the backend is started directly with `node`, and the base image's
-# docker-entrypoint.sh only shells out to `node`.
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
+# Exact versions, so a rebuild of the same commit gets the same packages.
+RUN apk add --no-cache \
+      nodejs-24=24.21.0-r3 \
+      c-ares=1.34.8-r2 \
+      icu78-data-full=78.3-r3 \
+      libicu78=78.3-r3 \
+      libnghttp2-14=1.70.0-r4 \
+      libstdc++=16.2.0-r1 \
+      libuv=1.53.0-r0 && \
+    adduser -D -u 1000 node
 
 # From here on we use the least-privileged `node` user to run the backend.
 USER node
