@@ -59,7 +59,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libc-bin=2.41-12+deb13u4 \
       libc6=2.41-12+deb13u4 \
       libcap2=1:2.75-10+deb13u1+b1 \
-      libpcre2-8-0=10.46-1~deb13u2 \
+      libpcre2-8-0=10.46-1~deb13u3 \
       libsqlite3-0=3.46.1-7+deb13u2 \
       libsystemd0=257.13-1~deb13u1 \
       libudev1=257.13-1~deb13u1 \
