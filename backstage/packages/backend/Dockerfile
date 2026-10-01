@@ -16,7 +16,7 @@
 # counts every one of them. Here they live in a stage that is thrown away, and only
 # node_modules crosses over.
 
-FROM node:24.20.0-trixie-slim AS deps
+FROM node:24.21.0-trixie-slim AS deps
 
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
@@ -47,7 +47,7 @@ RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
 RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid=1000 \
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
-FROM node:24.20.0-trixie-slim
+FROM node:24.21.0-trixie-slim
 
 # Upgrade OS packages with known CVEs
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       gzip=1.13-1+deb13u1 \
       libc-bin=2.41-12+deb13u4 \
       libc6=2.41-12+deb13u4 \
-      libcap2=1:2.75-10+deb13u1+b1 \
+      libcap2=1:2.75-10+deb13u1+b3 \
       libpcre2-8-0=10.46-1~deb13u2 \
       libsqlite3-0=3.46.1-7+deb13u2 \
       libsystemd0=257.13-1~deb13u1 \
