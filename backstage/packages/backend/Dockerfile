@@ -49,9 +49,9 @@ RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid
 # Wolfi runtime: glibc, so the native modules built in the Debian stage above still load.
 FROM cgr.dev/chainguard/wolfi-base:latest@sha256:08df5982c3d27e70a4ce1607e3bb9af09d746f8722cf135a7694afef879fc5a2
 
-# Only the packages named here are pinned. Their libraries float, so fixes land on rebuild.
+# Packages hold only a major version, so security fixes land on rebuild.
 RUN apk add --no-cache \
-      nodejs-24=24.21.0-r3 && \
+      nodejs-24 && \
     adduser -D -u 1000 node
 
 # From here on we use the least-privileged `node` user to run the backend.
