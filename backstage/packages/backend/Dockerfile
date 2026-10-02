@@ -61,8 +61,10 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
       libcap2=1:2.75-10+deb13u1+b1 \
       libpcre2-8-0=10.46-1~deb13u2 \
       libsqlite3-0=3.46.1-7+deb13u2 \
+      libssl3t64 \
       libsystemd0=257.13-1~deb13u1 \
       libudev1=257.13-1~deb13u1 \
+      openssl-provider-legacy \
       perl-base=5.40.1-6+deb13u1 \
       sed=4.9-2+deb13u1 && \
     rm -rf /var/lib/apt/lists/*
