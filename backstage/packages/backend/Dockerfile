@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
 # Wolfi runtime: glibc, so the native modules built in the Debian stage above still load.
-FROM cgr.dev/chainguard/wolfi-base:latest@sha256:08df5982c3d27e70a4ce1607e3bb9af09d746f8722cf135a7694afef879fc5a2
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:00fd4e9cdd9c5576c336d979fa663f9976f160c456b6ae9fe87e19c4e9c759a2
 
 # Packages hold only a major version, so security fixes land on rebuild.
 RUN apk add --no-cache \
