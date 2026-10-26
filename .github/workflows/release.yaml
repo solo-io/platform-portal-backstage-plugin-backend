@@ -19,6 +19,11 @@ jobs:
       GIT_USER_EMAIL: soloio-bot@github.com
       GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
+    # Each step starts in the repo root, so the backstage project path is set here.
+    defaults:
+      run:
+        working-directory: backstage
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
@@ -59,10 +64,6 @@ jobs:
             git pull origin main -X theirs --allow-unrelated-histories
             git push origin $RELEASE_BRANCH 
           fi
-
-      - name: Navigate to backstage project
-        run: |
-          cd ./backstage
 
       - name: Update version in package.json
         run: |
