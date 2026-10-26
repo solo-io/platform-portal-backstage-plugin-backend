@@ -110,7 +110,8 @@
     "@fastify/busboy": ">=3.2.1",
     "@grpc/grpc-js": ">=1.14.5",
     "webpack-dev-middleware": ">=7.4.6",
-    "react-dev-utils@npm:^12.0.0-next.60": "patch:react-dev-utils@npm%3A12.0.1#~/.yarn/patches/react-dev-utils-npm-12.0.1-83ba06e3ee.patch"
+    "react-dev-utils@npm:^12.0.0-next.60": "patch:react-dev-utils@npm%3A12.0.1#~/.yarn/patches/react-dev-utils-npm-12.0.1-83ba06e3ee.patch",
+    "http-cache-semantics": ">=4.3.0 <5"
   },
   "prettier": "@backstage/cli/config/prettier",
   "lint-staged": {

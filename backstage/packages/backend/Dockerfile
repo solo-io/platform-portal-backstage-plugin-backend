@@ -16,7 +16,7 @@
 # counts every one of them. Here they live in a stage that is thrown away, and only
 # node_modules crosses over.
 
-FROM node:24.20.0-trixie-slim AS deps
+FROM node:24.22.1-trixie-slim AS deps
 
 # Set Python interpreter for `node-gyp` to use
 ENV PYTHON=/usr/bin/python3
@@ -47,7 +47,7 @@ RUN --mount=type=cache,target=/home/node/.cache/yarn,sharing=locked,uid=1000,gid
     yarn workspaces focus --all --production && rm -rf "$(yarn cache clean)"
 
 # Wolfi runtime: glibc, so the native modules built in the Debian stage above still load.
-FROM cgr.dev/chainguard/wolfi-base:latest@sha256:256c88bb066424045021090932d50be93c8e3f2ce3586707702a401b146f3e43
+FROM cgr.dev/chainguard/wolfi-base:latest@sha256:360896efb0753a5701c48f860e17130c205eae5a264797aa3e7ea126ee2923a7
 
 # Packages hold only a major version, so security fixes land on rebuild.
 RUN apk add --no-cache \
