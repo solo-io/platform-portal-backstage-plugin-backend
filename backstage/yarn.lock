@@ -4612,7 +4612,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@backstage/plugin-catalog-backend@npm:^3.4.0, @backstage/plugin-catalog-backend@npm:^3.9.1":
+"@backstage/plugin-catalog-backend@npm:^3.4.0":
   version: 3.9.1
   resolution: "@backstage/plugin-catalog-backend@npm:3.9.1"
   dependencies:
@@ -4651,6 +4651,48 @@ __metadata:
     zod: "npm:^3.25.76 || ^4.0.0"
     zod-validation-error: "npm:^5.0.0"
   checksum: 10c0/d765f0f9884bb8ccf6d9c0467ff1606c296dc27f71485ac13f3fc3d562aa995e4808e980ddf1c1e74e440d05be2aedb69d03010eb58f498125e10e00dbb2c3e0
+  languageName: node
+  linkType: hard
+
+"@backstage/plugin-catalog-backend@npm:^3.9.1":
+  version: 3.9.2
+  resolution: "@backstage/plugin-catalog-backend@npm:3.9.2"
+  dependencies:
+    "@backstage/backend-openapi-utils": "npm:^0.7.1"
+    "@backstage/backend-plugin-api": "npm:^1.10.0"
+    "@backstage/catalog-client": "npm:^1.16.1"
+    "@backstage/catalog-model": "npm:^1.10.0"
+    "@backstage/config": "npm:^1.3.8"
+    "@backstage/errors": "npm:^1.3.1"
+    "@backstage/filter-predicates": "npm:^0.1.4"
+    "@backstage/integration": "npm:^2.1.1"
+    "@backstage/plugin-catalog-common": "npm:^1.1.10"
+    "@backstage/plugin-catalog-node": "npm:^2.2.4"
+    "@backstage/plugin-events-node": "npm:^0.4.25"
+    "@backstage/plugin-permission-common": "npm:^0.9.10"
+    "@backstage/plugin-permission-node": "npm:^0.11.3"
+    "@backstage/types": "npm:^1.2.2"
+    "@opentelemetry/api": "npm:^1.9.0"
+    ajv: "npm:^8.10.0"
+    ajv-errors: "npm:^3.0.0"
+    codeowners-utils: "npm:^1.0.2"
+    core-js: "npm:^3.6.5"
+    express: "npm:^4.22.0"
+    fast-json-stable-stringify: "npm:^2.1.0"
+    fs-extra: "npm:^11.2.0"
+    git-url-parse: "npm:^15.0.0"
+    glob: "npm:^13.0.0"
+    knex: "npm:^3.0.0"
+    lodash: "npm:^4.17.21"
+    luxon: "npm:^3.0.0"
+    minimatch: "npm:^10.2.1"
+    p-limit: "npm:^3.0.2"
+    prom-client: "npm:^15.0.0"
+    yaml: "npm:^2.0.0"
+    yn: "npm:^4.0.0"
+    zod: "npm:^3.25.76 || ^4.0.0"
+    zod-validation-error: "npm:^5.0.0"
+  checksum: 10c0/4040a9fe3e5a43b463b530e1893ffd1e24876aace03353ceccc1e04af06cde129ad0325fd29fcbb899188cd6b6fb1f8c5334f9bee931bbe0ece42ced61d2a238
   languageName: node
   linkType: hard
 
@@ -20294,7 +20336,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"colord@npm:>=2.9.4":
+"colord@npm:^2.9.1":
   version: 2.10.0
   resolution: "colord@npm:2.10.0"
   checksum: 10c0/2f5d1d1759124f593deca17bbbab8a88bdc3ab68bbcc88db76c1192d9a5d575db202badde044bf61789561fa0ed7a9eb895382becad1af27ec65934c216e9e04
@@ -20430,7 +20472,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"compression@npm:>=1.8.2":
+"compression@npm:^1.7.4, compression@npm:^1.8.1":
   version: 1.8.2
   resolution: "compression@npm:1.8.2"
   dependencies:
@@ -24746,7 +24788,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"handlebars@npm:>=4.7.9":
+"handlebars@npm:^4.7.3":
   version: 4.7.10
   resolution: "handlebars@npm:4.7.10"
   dependencies:
@@ -25751,7 +25793,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ip-address@npm:>=10.5.1":
+"ip-address@npm:^10.0.1, ip-address@npm:^10.2.0":
   version: 10.7.5
   resolution: "ip-address@npm:10.7.5"
   checksum: 10c0/0213462eada955051a4d5927a62f6613b7bf0f4b426347641491ef9c8498ee6e1ef0bcbe1455382de6d61771b0ab4a344919102d4b614d284161ed8df620125f
@@ -27925,7 +27967,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jsonpath@npm:>=1.3.0":
+"jsonpath@npm:^1.1.1":
   version: 1.3.0
   resolution: "jsonpath@npm:1.3.0"
   dependencies:
@@ -28446,7 +28488,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash-es@npm:>=4.18.0":
+"lodash-es@npm:^4.17.21":
   version: 4.18.1
   resolution: "lodash-es@npm:4.18.1"
   checksum: 10c0/35d4dcf87ef07f8d090f409447575800108057e360b445f590d0d25d09e3d1e33a163d2fc100d4d072b0f901d5e2fc533cd7c4bfd8eeb38a06abec693823c8b8
@@ -30036,7 +30078,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"multer@npm:>=2.3.0":
+"multer@npm:^2.0.2":
   version: 2.5.0
   resolution: "multer@npm:2.5.0"
   dependencies:
@@ -30375,10 +30417,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-forge@npm:>=1.4.0":
-  version: 1.4.0
-  resolution: "node-forge@npm:1.4.0"
-  checksum: 10c0/67330a5f1f95257a4c8a93b7d555abe87b5f15e350123aa396c97a21a8ca94f9c6549008eb2c73668a91e0d7e3a905785acbd8f8bd0751c29401292011f8f8e1
+"node-forge@npm:^1, node-forge@npm:^1.2.1, node-forge@npm:^1.3.2":
+  version: 1.4.2
+  resolution: "node-forge@npm:1.4.2"
+  checksum: 10c0/fb80d5eac8018f413647e17e6278876d0bfff8b32e8e51c4132584ddcef6b1881cc647a278072af3c2611744397e7844fc0f87f940ed818ec423f4d0c48db10a
   languageName: node
   linkType: hard
 
@@ -32513,7 +32555,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"proxy-addr@npm:>=2.0.8":
+"proxy-addr@npm:^2.0.7, proxy-addr@npm:~2.0.7":
   version: 2.0.8
   resolution: "proxy-addr@npm:2.0.8"
   dependencies:
@@ -32614,13 +32656,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qs@npm:>=6.16.0":
-  version: 6.16.0
-  resolution: "qs@npm:6.16.0"
+"qs@npm:>=6.16.1":
+  version: 6.17.1
+  resolution: "qs@npm:6.17.1"
   dependencies:
     es-define-property: "npm:^1.0.1"
     side-channel: "npm:^1.1.1"
-  checksum: 10c0/eb3e31992fbd70e31a1791e571ed817d70975de7d3bfcbbbec93d77d1dd305877e9e8fdbcc62303c228ee5c3606685622cd6231c042dbc4790bb4e7c65fcbe18
+  checksum: 10c0/55f09dd0282fda70ce9475719158f910f2214477b95aa7284675fb9977c9cdae89fb495423399227331de76766703aaa71372e96cded05046e21713c033e885d
   languageName: node
   linkType: hard
 
@@ -35194,7 +35236,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"source-map-js@npm:>=1.2.2":
+"source-map-js@npm:^1.0.1, source-map-js@npm:^1.2.1":
   version: 1.2.2
   resolution: "source-map-js@npm:1.2.2"
   checksum: 10c0/d5d6dec62266834f83dd4f8a2606a196fb1a006ca5d53b0ef80ee513b7eba2f4e2ae241f4bc129ae7e9b80dea24f6e3d92b446b7e6e96be7653cab8888168a94
@@ -37504,7 +37546,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"urllib@npm:>=4.9.1":
+"urllib@npm:^4.9.0":
   version: 4.9.1
   resolution: "urllib@npm:4.9.1"
   dependencies:
@@ -37813,7 +37855,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vm2@npm:>=3.12.2":
+"vm2@npm:^3.10.0":
   version: 3.12.2
   resolution: "vm2@npm:3.12.2"
   dependencies:
